@@ -1,4 +1,6 @@
-﻿import { characterRecipes } from '../lib/recipes';
+﻿import { useEffect, useMemo, useState } from 'react';
+import { getPersonalityImagePath } from '../lib/personalityImages';
+import { characterRecipes } from '../lib/recipes';
 import type { CharacterRecipe } from '../lib/types';
 
 type CharacterArtProps = {
@@ -703,8 +705,48 @@ const FuckRenderer = ({ recipe }: { recipe: CharacterRecipe }) => (
 
 export const CharacterArt = ({ recipeKey, code, className, size = 220, floating = false }: CharacterArtProps) => {
   const recipe = characterRecipes[recipeKey];
+  const imagePath = useMemo(() => getPersonalityImagePath(code), [code]);
+  const [imageStatus, setImageStatus] = useState<'loading' | 'ready' | 'missing'>('loading');
+
+  useEffect(() => {
+    let cancelled = false;
+    const image = new Image();
+
+    setImageStatus('loading');
+    image.onload = () => {
+      if (!cancelled) {
+        setImageStatus('ready');
+      }
+    };
+    image.onerror = () => {
+      if (!cancelled) {
+        setImageStatus('missing');
+      }
+    };
+    image.src = imagePath;
+
+    return () => {
+      cancelled = true;
+    };
+  }, [imagePath]);
+
   if (!recipe) {
     return null;
+  }
+
+  if (imageStatus === 'ready') {
+    return (
+      <div className={className} aria-label={`${code} visual`}>
+        <img
+          src={imagePath}
+          alt={code}
+          width={size}
+          height={size}
+          className={floating ? 'animate-drift object-contain' : 'object-contain'}
+          style={{ width: `${size}px`, height: `${size}px` }}
+        />
+      </div>
+    );
   }
 
   const renderer = (() => {
@@ -749,3 +791,5 @@ export const CharacterArt = ({ recipeKey, code, className, size = 220, floating 
     </div>
   );
 };
+
+
