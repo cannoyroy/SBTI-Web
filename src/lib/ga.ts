@@ -37,7 +37,7 @@ const injectGtagScript = () => {
 };
 
 export const initGa = () => {
-  if (!hasMeasurementId() || initialized || typeof window === 'undefined') {
+  if (typeof window === 'undefined' || initialized || !hasMeasurementId()) {
     return;
   }
 
@@ -50,7 +50,7 @@ export const initGa = () => {
 };
 
 export const trackPageView = (pagePath: string) => {
-  if (!hasMeasurementId() || typeof window === 'undefined') {
+  if (typeof window === 'undefined' || !hasMeasurementId()) {
     return;
   }
 
@@ -63,7 +63,7 @@ export const trackPageView = (pagePath: string) => {
 };
 
 export const trackEvent = (name: string, params?: Record<string, unknown>) => {
-  if (!hasMeasurementId() || typeof window === 'undefined') {
+  if (typeof window === 'undefined' || !hasMeasurementId()) {
     return;
   }
 
