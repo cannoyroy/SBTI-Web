@@ -10,6 +10,18 @@ import { personalityMap } from '../lib/personalities';
 import { useQuiz } from '../state/QuizContext';
 
 const siteUrl = 'https://sbti.untymen.com';
+const exportTimeoutMs = 8000;
+
+const isIosSafari = () => {
+  if (typeof navigator === 'undefined') {
+    return false;
+  }
+  const ua = navigator.userAgent;
+  const iOS = /iP(hone|od|ad)/.test(ua) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+  const webkit = /WebKit/i.test(ua);
+  const notOtherBrowser = !/CriOS|FxiOS|EdgiOS|OPiOS|DuckDuckGo|YaBrowser|MicroMessenger/i.test(ua);
+  return iOS && webkit && notOtherBrowser;
+};
 
 const describeAxis = (axisId: string, score: number) => {
   const axis = traitAxes.find((item) => item.id === axisId);
@@ -34,7 +46,7 @@ const describeAxis = (axisId: string, score: number) => {
 export const ResultPage = () => {
   const { result, isComplete, resetQuiz } = useQuiz();
   const shareRef = useRef<HTMLDivElement | null>(null);
-  const [shareState, setShareState] = useState<'idle' | 'working' | 'done' | 'error'>('idle');
+  const [shareState, setShareState] = useState<'idle' | 'working' | 'done' | 'fallback' | 'error'>('idle');
 
   const rankedMatches = useMemo(() => {
     if (!result) {
@@ -57,6 +69,123 @@ export const ResultPage = () => {
   const primary = personalityMap[result.primaryCode];
   const faction = factionMeta[primary.faction];
   const narratives = traitNarratives(result.traitScores);
+  const onIosSafari = isIosSafari();
+
+  const waitForCaptureReady = async () => {
+    const card = shareRef.current;
+    if (!card) {
+      return;
+    }
+
+    if (typeof document !== 'undefined' && 'fonts' in document) {
+      try {
+        await (document as Document & { fonts?: { ready?: Promise<unknown> } }).fonts?.ready;
+      } catch {
+        // Ignore font readiness failures and continue to capture.
+      }
+    }
+
+    const images = Array.from(card.querySelectorAll('img'));
+    await Promise.all(
+      images.map(
+        (img) =>
+          new Promise<void>((resolve) => {
+            if (img.complete && img.naturalWidth > 0) {
+              resolve();
+              return;
+            }
+
+            const cleanup = () => {
+              img.removeEventListener('load', onLoad);
+              img.removeEventListener('error', onError);
+            };
+            const onLoad = () => {
+              cleanup();
+              resolve();
+            };
+            const onError = () => {
+              cleanup();
+              resolve();
+            };
+            img.addEventListener('load', onLoad, { once: true });
+            img.addEventListener('error', onError, { once: true });
+            window.setTimeout(() => {
+              cleanup();
+              resolve();
+            }, exportTimeoutMs);
+          }),
+      ),
+    );
+
+    await new Promise<void>((resolve) => {
+      window.requestAnimationFrame(() => resolve());
+    });
+  };
+
+  const canvasToBlob = (canvas: HTMLCanvasElement) =>
+    new Promise<Blob>((resolve, reject) => {
+      canvas.toBlob((blob) => {
+        if (blob) {
+          resolve(blob);
+          return;
+        }
+        reject(new Error('Failed to generate image blob'));
+      }, 'image/png');
+    });
+
+  const downloadBlob = (blob: Blob, filename: string) => {
+    const objectUrl = URL.createObjectURL(blob);
+    try {
+      const link = document.createElement('a');
+      link.href = objectUrl;
+      link.download = filename;
+      link.rel = 'noopener';
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+    } finally {
+      window.setTimeout(() => URL.revokeObjectURL(objectUrl), 1000);
+    }
+  };
+
+  const tryNativeShare = async (blob: Blob, filename: string) => {
+    if (typeof navigator === 'undefined' || !navigator.share) {
+      return false;
+    }
+    const file = new File([blob], filename, { type: 'image/png' });
+    const nav = navigator as Navigator & { canShare?: (payload: ShareData) => boolean };
+
+    if (typeof nav.canShare === 'function' && !nav.canShare({ files: [file] })) {
+      return false;
+    }
+
+    try {
+      await navigator.share({
+        files: [file],
+        title: `SBTI ${primary.code}`,
+        text: `${primary.code} - ${primary.nameZh}\n${siteUrl}`,
+      });
+      return true;
+    } catch (error) {
+      console.error('native share failed', error);
+      return false;
+    }
+  };
+
+  const openImageFallback = (dataUrl: string) => {
+    const opened = window.open('', '_blank', 'noopener,noreferrer');
+    if (!opened) {
+      return false;
+    }
+
+    opened.document.title = `SBTI-${primary.code}.png`;
+    opened.document.body.style.margin = '0';
+    opened.document.body.style.background = '#0b0f0e';
+    opened.document.body.style.display = 'grid';
+    opened.document.body.style.placeItems = 'center';
+    opened.document.body.innerHTML = `<img src="${dataUrl}" alt="SBTI Result" style="max-width:100vw;max-height:100vh;object-fit:contain;" />`;
+    return true;
+  };
 
   const handleShare = async () => {
     if (!shareRef.current) {
@@ -65,18 +194,45 @@ export const ResultPage = () => {
 
     try {
       setShareState('working');
+      await waitForCaptureReady();
+
       const canvas = await html2canvas(shareRef.current, {
         backgroundColor: '#f5f7f2',
-        scale: 2,
+        scale: Math.min(window.devicePixelRatio || 1, 2),
         useCORS: true,
       });
+      const blob = await canvasToBlob(canvas);
+      const filename = `SBTI-${primary.code}.png`;
 
-      const link = document.createElement('a');
-      link.href = canvas.toDataURL('image/png');
-      link.download = `SBTI-${primary.code}.png`;
-      link.click();
+      if (onIosSafari && (await tryNativeShare(blob, filename))) {
+        setShareState('done');
+        return;
+      }
+
+      if (onIosSafari) {
+        const opened = openImageFallback(canvas.toDataURL('image/png'));
+        setShareState(opened ? 'fallback' : 'error');
+        return;
+      }
+
+      downloadBlob(blob, filename);
       setShareState('done');
-    } catch {
+    } catch (error) {
+      console.error('export share card failed', error);
+      if (shareRef.current) {
+        try {
+          const backupCanvas = await html2canvas(shareRef.current, {
+            backgroundColor: '#f5f7f2',
+            scale: 1,
+            useCORS: true,
+          });
+          const opened = openImageFallback(backupCanvas.toDataURL('image/png'));
+          setShareState(opened ? 'fallback' : 'error');
+          return;
+        } catch (fallbackError) {
+          console.error('fallback export failed', fallbackError);
+        }
+      }
       setShareState('error');
     }
   };
@@ -121,7 +277,21 @@ export const ResultPage = () => {
               </button>
             </div>
             <div className="text-sm text-slate-400">
-              {shareState === 'working' ? '正在生成图片...' : shareState === 'done' ? '图片已导出' : shareState === 'error' ? '导出失败，请重试' : '可下载 PNG'}
+              {shareState === 'working'
+                ? onIosSafari
+                  ? 'Generating image, trying system share first...'
+                  : 'Generating image...'
+                : shareState === 'done'
+                  ? onIosSafari
+                    ? 'Share sheet or download triggered'
+                    : 'Image exported'
+                  : shareState === 'fallback'
+                    ? 'Image opened in new tab, long-press to save'
+                    : shareState === 'error'
+                      ? 'Export failed, please retry'
+                      : onIosSafari
+                        ? 'On iOS, we use share sheet first and fall back to long-press save'
+                        : 'Download PNG'}
             </div>
             <div className="grid gap-4 sm:grid-cols-2">
               <div className="rounded-[28px] bg-slate-50 p-6">
@@ -285,4 +455,5 @@ export const ResultPage = () => {
     </div>
   );
 };
+
 

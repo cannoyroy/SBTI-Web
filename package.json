@@ -7,9 +7,11 @@
     "dev": "vite",
     "build": "tsc -b && vite build",
     "preview": "vite preview",
-    "audit:matching": "node scripts/matching-sanity-check.mjs"
+    "audit:matching": "node scripts/matching-sanity-check.mjs",
+    "gen:images": "node scripts/generate-character-images.mjs"
   },
   "dependencies": {
+    "@google/genai": "^1.49.0",
     "@vercel/analytics": "^2.0.1",
     "@vercel/speed-insights": "^2.0.0",
     "html2canvas": "^1.4.1",
@@ -28,4 +30,3 @@
     "vite": "^5.4.11"
   }
 }
-
