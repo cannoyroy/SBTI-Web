@@ -1,0 +1,6 @@
+reference_materials/
+
+node_modules/
+dist/
+
+*.tsbuildinfo
