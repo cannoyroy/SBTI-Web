@@ -3,7 +3,7 @@ import { CharacterArt } from '../components/CharacterArt';
 import { PersonalityCard } from '../components/PersonalityCard';
 import { personalities } from '../lib/personalities';
 
-const featuredCodes = ['FUCK', 'DEAD', 'FAKE', 'ATM-er', 'LOVE-R', 'IMFW'];
+const featuredCodes = ['FUCK', 'SHIT', 'ZZZZ', 'ATM-er', 'LOVE-R', 'IMFW'];
 const featured = featuredCodes
   .map((code) => personalities.find((item) => item.code === code))
   .filter(Boolean);
@@ -123,3 +123,5 @@ export const HomePage = () => {
     </div>
   );
 };
+
+
