@@ -9,6 +9,7 @@ import { initGa } from './lib/ga';
 import './styles.css';
 import { QuizProvider } from './state/QuizContext';
 
+console.log('Debug GA ID:', import.meta.env.VITE_GA_ID || '变量是空的！');
 initGa();
 
 ReactDOM.createRoot(document.getElementById('root')!).render(
@@ -23,3 +24,4 @@ ReactDOM.createRoot(document.getElementById('root')!).render(
     </BrowserRouter>
   </React.StrictMode>,
 );
+
