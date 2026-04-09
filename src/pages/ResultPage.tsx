@@ -11,6 +11,8 @@ import { useQuiz } from '../state/QuizContext';
 
 const siteUrl = 'https://sbti.untymen.com';
 
+type ShareState = 'idle' | 'working' | 'done' | 'error';
+
 const describeAxis = (axisId: string, score: number) => {
   const axis = traitAxes.find((item) => item.id === axisId);
   if (!axis) {
@@ -31,10 +33,35 @@ const describeAxis = (axisId: string, score: number) => {
   return `你在「${axis.leftLabel} / ${axis.rightLabel}」之间会跟着场景切换。`;
 };
 
+const canvasToBlob = (canvas: HTMLCanvasElement) => {
+  return new Promise<Blob>((resolve, reject) => {
+    canvas.toBlob((blob) => {
+      if (blob) {
+        resolve(blob);
+        return;
+      }
+
+      reject(new Error('Failed to create image blob'));
+    }, 'image/png');
+  });
+};
+
+const downloadBlob = (blob: Blob, filename: string) => {
+  const blobUrl = URL.createObjectURL(blob);
+  const link = document.createElement('a');
+  link.href = blobUrl;
+  link.download = filename;
+  link.rel = 'noopener';
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
+  window.setTimeout(() => URL.revokeObjectURL(blobUrl), 1000);
+};
+
 export const ResultPage = () => {
   const { result, isComplete, resetQuiz } = useQuiz();
   const shareRef = useRef<HTMLDivElement | null>(null);
-  const [shareState, setShareState] = useState<'idle' | 'working' | 'done' | 'error'>('idle');
+  const [shareState, setShareState] = useState<ShareState>('idle');
 
   const rankedMatches = useMemo(() => {
     if (!result) {
@@ -71,16 +98,32 @@ export const ResultPage = () => {
       setShareState('working');
       const canvas = await html2canvas(shareRef.current, {
         backgroundColor: '#f5f7f2',
-        scale: 2,
+        scale: Math.min(window.devicePixelRatio || 2, 3),
         useCORS: true,
+        logging: false,
       });
 
-      const link = document.createElement('a');
-      link.href = canvas.toDataURL('image/png');
-      link.download = `SBTI-${primary.code}.png`;
-      link.click();
+      const blob = await canvasToBlob(canvas);
+      const filename = `SBTI-${primary.code}.png`;
+      const file = new File([blob], filename, { type: 'image/png' });
+      const nav = navigator as Navigator & {
+        canShare?: (data?: ShareData) => boolean;
+      };
+
+      if (nav.share && nav.canShare?.({ files: [file] })) {
+        await nav.share({
+          files: [file],
+          title: `SBTI ${primary.code}`,
+          text: `${primary.code} - ${primary.nameZh}\n${siteUrl}`,
+        });
+        setShareState('done');
+        return;
+      }
+
+      downloadBlob(blob, filename);
       setShareState('done');
-    } catch {
+    } catch (error) {
+      console.error(error);
       setShareState('error');
     }
   };
@@ -125,7 +168,13 @@ export const ResultPage = () => {
               </button>
             </div>
             <div className="text-sm text-slate-400">
-              {shareState === 'working' ? '正在生成图片...' : shareState === 'done' ? '图片已导出' : shareState === 'error' ? '导出失败，请重试' : '可下载 PNG'}
+              {shareState === 'working'
+                ? '正在生成图片...'
+                : shareState === 'done'
+                  ? '手机端会直接调起系统分享或保存，桌面端会下载 PNG'
+                  : shareState === 'error'
+                    ? '导出失败，请重试'
+                    : '手机端优先调用系统分享，桌面端下载 PNG'}
             </div>
             <div className="grid gap-4 sm:grid-cols-2">
               <div className="rounded-[28px] bg-slate-50 p-6">
