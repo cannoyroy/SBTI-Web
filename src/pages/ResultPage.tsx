@@ -9,6 +9,8 @@ import { rankPersonalities, traitNarratives } from '../lib/matching';
 import { personalityMap } from '../lib/personalities';
 import { useQuiz } from '../state/QuizContext';
 
+const siteUrl = 'https://sbti.untymen.com';
+
 const describeAxis = (axisId: string, score: number) => {
   const axis = traitAxes.find((item) => item.id === axisId);
   if (!axis) {
@@ -100,6 +102,12 @@ export const ResultPage = () => {
             <blockquote className="rounded-[28px] border border-slate-200 bg-slate-50 p-6 text-lg italic leading-8 text-slate-700">
               “{primary.quote}”
             </blockquote>
+            <div className="rounded-[24px] border border-slate-200 bg-white/80 px-5 py-4 text-sm text-slate-500">
+              网站链接：
+              <a href={siteUrl} target="_blank" rel="noreferrer" className="ml-2 break-all font-semibold text-accent hover:underline">
+                {siteUrl}
+              </a>
+            </div>
             <div className="flex flex-col gap-3 sm:flex-row">
               <button
                 type="button"
@@ -262,7 +270,7 @@ export const ResultPage = () => {
               </div>
               <div className="mt-6 rounded-[24px] bg-slate-50 p-5 text-sm leading-6 text-slate-600">{primary.tagline}</div>
               <div className="mt-6 flex items-center justify-between gap-4 border-t border-slate-200 pt-4 text-xs text-slate-400">
-                <span>搜索 SBTI，看看你现在是哪种精神状态</span>
+                <span className="break-all">{siteUrl}</span>
                 <span>娱乐测试结果，仅供分享</span>
               </div>
             </div>
