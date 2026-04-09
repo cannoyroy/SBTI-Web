@@ -1,6 +1,6 @@
-# SBTI Web
+﻿# SBTI Web
 
-SBTI Web is a Vite + React implementation of an entertainment-style "mental state personality" test site inspired by MBTI / 16Personalities presentation patterns.
+SBTI Web is a Vite + React implementation of an entertainment-style mental-state personality test site for shareable, meme-aware self-observation.
 
 It focuses on:
 
@@ -22,7 +22,7 @@ It focuses on:
 ## Features
 
 - 36-question quiz with 7-level answer scale
-- 6 mental-state dimensions with MBTI-style dual-sided bars
+- 6 mental-state dimensions with dual-sided visual bars
 - 29 launch personalities
 - data-driven personality definitions and visual recipes
 - personality atlas page
@@ -82,4 +82,5 @@ Recommended Vercel settings:
 ## Notes
 
 - `reference_materials/` is intentionally ignored by Git.
-- This project is for entertainment/product exploration, not psychological diagnosis.
+- This project is for entertainment and product exploration, not psychological diagnosis.
+

@@ -1,4 +1,4 @@
-export type Faction = 'nihilist' | 'rager' | 'role' | 'meme' | 'original';
+﻿export type Faction = 'nihilist' | 'rager' | 'role' | 'meme' | 'original';
 
 export type TraitAxis = {
   id: string;
@@ -36,16 +36,23 @@ export type PersonalityProfile = {
 };
 
 export type CharacterRecipe = {
-  skeleton: 'standing' | 'leaning' | 'floating' | 'special';
+  skeleton: 'biped' | 'prop-heavy' | 'scene';
   pose:
-    | 'neutral'
-    | 'slouch'
-    | 'offering'
-    | 'crossed'
+    | 'collapse'
+    | 'offer'
+    | 'clutch'
     | 'panic'
-    | 'swagger'
-    | 'meditate'
-    | 'fallen';
+    | 'preach'
+    | 'kneel'
+    | 'lounge'
+    | 'march'
+    | 'stumble'
+    | 'float'
+    | 'pray'
+    | 'strut'
+    | 'coffin'
+    | 'bagged'
+    | 'meditate';
   palette: {
     skin: string;
     skinShadow: string;
@@ -65,7 +72,12 @@ export type CharacterRecipe = {
     | 'soft'
     | 'panic'
     | 'sleep'
-    | 'stern';
+    | 'stern'
+    | 'drool'
+    | 'cry'
+    | 'manic'
+    | 'dizzy'
+    | 'greedy';
   overrideRenderer?: string;
 };
 

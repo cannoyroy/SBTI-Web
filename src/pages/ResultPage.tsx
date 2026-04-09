@@ -100,6 +100,25 @@ export const ResultPage = () => {
             <blockquote className="rounded-[28px] border border-slate-200 bg-slate-50 p-6 text-lg italic leading-8 text-slate-700">
               “{primary.quote}”
             </blockquote>
+            <div className="flex flex-col gap-3 sm:flex-row">
+              <button
+                type="button"
+                onClick={handleShare}
+                className="inline-flex items-center justify-center rounded-full bg-accent px-7 py-4 font-display text-lg font-bold text-white transition hover:-translate-y-1 hover:shadow-xl"
+              >
+                保存结果图
+              </button>
+              <button
+                type="button"
+                onClick={resetQuiz}
+                className="inline-flex items-center justify-center rounded-full border border-slate-300 bg-white px-7 py-4 font-display text-lg font-bold text-slate-700 transition hover:border-slate-400 hover:bg-slate-50"
+              >
+                重新测试
+              </button>
+            </div>
+            <div className="text-sm text-slate-400">
+              {shareState === 'working' ? '正在生成图片...' : shareState === 'done' ? '图片已导出' : shareState === 'error' ? '导出失败，请重试' : '可下载 PNG'}
+            </div>
             <div className="grid gap-4 sm:grid-cols-2">
               <div className="rounded-[28px] bg-slate-50 p-6">
                 <div className="text-sm font-semibold uppercase tracking-[0.2em] text-slate-400">匹配度</div>
@@ -209,9 +228,7 @@ export const ResultPage = () => {
         <div className="space-y-6">
           <div className="flex items-center justify-between">
             <h2 className="section-title">分享卡片</h2>
-            <div className="text-sm text-slate-400">
-              {shareState === 'working' ? '正在生成图片...' : shareState === 'done' ? '图片已导出' : shareState === 'error' ? '导出失败，请重试' : '可下载 PNG'}
-            </div>
+            <div className="text-sm text-slate-400">用于下载和转发的结果图</div>
           </div>
           <div ref={shareRef} id="share-card" className="overflow-hidden rounded-[36px] border border-white/80 bg-[#f5f7f2] p-8 shadow-cloud">
             <div className="rounded-[28px] bg-white p-6">
@@ -243,26 +260,10 @@ export const ResultPage = () => {
               </div>
               <div className="mt-6 rounded-[24px] bg-slate-50 p-5 text-sm leading-6 text-slate-600">{primary.tagline}</div>
               <div className="mt-6 flex items-center justify-between gap-4 border-t border-slate-200 pt-4 text-xs text-slate-400">
-                <span>扫码或搜索 SBTI 测试你的精神状态</span>
-                <span>sbti.vibe/personality</span>
+                <span>搜索 SBTI，看看你现在是哪种精神状态</span>
+                <span>娱乐测试结果，仅供分享</span>
               </div>
             </div>
-          </div>
-          <div className="flex flex-col gap-3 sm:flex-row">
-            <button
-              type="button"
-              onClick={handleShare}
-              className="inline-flex items-center justify-center rounded-full bg-accent px-7 py-4 font-display text-lg font-bold text-white transition hover:-translate-y-1 hover:shadow-xl"
-            >
-              保存结果图
-            </button>
-            <button
-              type="button"
-              onClick={resetQuiz}
-              className="inline-flex items-center justify-center rounded-full border border-slate-300 bg-white px-7 py-4 font-display text-lg font-bold text-slate-700 transition hover:border-slate-400 hover:bg-slate-50"
-            >
-              重新测试
-            </button>
           </div>
         </div>
         <div className="space-y-5">

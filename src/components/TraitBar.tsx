@@ -14,6 +14,7 @@ export const TraitBar = ({ axisId, score }: TraitBarProps) => {
   const leftPct = 100 - score;
   const rightPct = score;
   const leaningLeft = leftPct > rightPct;
+  const markerLeft = `clamp(0px, calc(${leftPct}% - 12px), calc(100% - 24px))`;
 
   return (
     <div className="space-y-3 rounded-[28px] border border-slate-200 bg-slate-50/90 p-5">
@@ -21,10 +22,10 @@ export const TraitBar = ({ axisId, score }: TraitBarProps) => {
         <span>{axis.leftLabel}</span>
         <span>{axis.rightLabel}</span>
       </div>
-      <div className="relative h-4 overflow-hidden rounded-full bg-slate-200">
-        <div className="absolute inset-y-0 left-0" style={{ width: `${leftPct}%`, backgroundColor: axis.color, opacity: 0.94 }} />
-        <div className="absolute inset-y-0 right-0 bg-slate-300/70" style={{ width: `${rightPct}%` }} />
-        <div className="absolute top-1/2 h-6 w-6 -translate-y-1/2 rounded-full border-4 border-white bg-slate-900 shadow" style={{ left: `calc(${score}% - 12px)` }} />
+      <div className="relative h-4 overflow-visible rounded-full bg-slate-200">
+        <div className="absolute inset-y-0 left-0 rounded-l-full" style={{ width: `${leftPct}%`, backgroundColor: axis.color, opacity: 0.94 }} />
+        <div className="absolute inset-y-0 right-0 rounded-r-full bg-slate-300/70" style={{ width: `${rightPct}%` }} />
+        <div className="absolute top-1/2 h-6 w-6 -translate-y-1/2 rounded-full border-4 border-white bg-slate-900 shadow" style={{ left: markerLeft }} />
       </div>
       <div className="flex items-center justify-between text-sm text-slate-600">
         <span>{leftPct}% {axis.leftLabel}</span>

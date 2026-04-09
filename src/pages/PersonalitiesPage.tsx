@@ -48,6 +48,7 @@ export const PersonalitiesPage = () => {
               这些人格共享同一套维度系统、匹配算法和角色 recipe。
               后续新增人格时，只要补充画像分数、文案和可视化配置，就能自动接入结果链路。
             </p>
+            <p className="mt-3 text-sm text-slate-400">更多人格正在更新中，后续会持续补充新的精神状态切片。</p>
           </div>
           <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-1 xl:grid-cols-2">
             {publicFactionOrder.map((key) => (

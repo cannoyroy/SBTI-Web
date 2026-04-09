@@ -41,7 +41,7 @@ export const HomePage = () => {
               </Link>
             </div>
             <p className="text-xs leading-6 text-slate-400">
-              部分视觉与玩法元素基于公开流行产品风格做研究性复刻，如有侵权请联系删除。
+              本测试用于娱乐化自我观察与分享，不构成任何心理诊断或专业建议。
             </p>
             <div className="grid gap-4 sm:grid-cols-3">
               <div className="rounded-[28px] bg-slate-50 p-5">

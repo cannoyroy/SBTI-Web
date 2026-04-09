@@ -1,4 +1,4 @@
-import type { TraitAxis } from './types';
+﻿import type { TraitAxis } from './types';
 
 export const traitAxes: TraitAxis[] = [
   {
@@ -60,7 +60,7 @@ export const factionMeta = {
   rager: { label: '暴躁/发疯流派', color: '#d47c57' },
   role: { label: '社会角色/社畜流派', color: '#2f9d79' },
   meme: { label: '迷因/自嘲流派', color: '#8a4fa6' },
-  original: { label: '原创扩展人格', color: '#346bce' },
+  original: { label: '迷因/自嘲流派', color: '#8a4fa6' },
 };
 
 export const storageKey = 'sbti-quiz-state';
