@@ -40,10 +40,13 @@ export const HomePage = () => {
                 浏览人格图鉴
               </Link>
             </div>
+            <p className="text-xs leading-6 text-slate-400">
+              部分视觉与玩法元素基于公开流行产品风格做研究性复刻，如有侵权请联系删除。
+            </p>
             <div className="grid gap-4 sm:grid-cols-3">
               <div className="rounded-[28px] bg-slate-50 p-5">
                 <div className="font-display text-3xl font-bold text-slate-900">29</div>
-                <div className="mt-2 text-sm leading-6 text-slate-500">首发人格原型，包含参考图同款与原创扩展。</div>
+                <div className="mt-2 text-sm leading-6 text-slate-500">首发人格原型，覆盖多种常见精神状态流派。</div>
               </div>
               <div className="rounded-[28px] bg-slate-50 p-5">
                 <div className="font-display text-3xl font-bold text-slate-900">36</div>

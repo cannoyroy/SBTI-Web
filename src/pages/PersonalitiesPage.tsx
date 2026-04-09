@@ -4,20 +4,33 @@ import { factionMeta } from '../lib/constants';
 import { personalities } from '../lib/personalities';
 import type { Faction } from '../lib/types';
 
+const publicFactionOrder: Faction[] = ['nihilist', 'rager', 'role', 'meme'];
+
+const publicGroupLabels: Record<Faction, string> = {
+  nihilist: '摆烂/虚无',
+  rager: '暴躁/发疯',
+  role: '社会角色',
+  meme: '迷因/自嘲',
+  original: '迷因/自嘲',
+};
+
+const normalizeFaction = (faction: Faction): Faction => (faction === 'original' ? 'meme' : faction);
+
 const filterOptions: Array<{ id: 'all' | Faction; label: string }> = [
   { id: 'all', label: '全部人格' },
   { id: 'nihilist', label: '摆烂/虚无' },
   { id: 'rager', label: '暴躁/发疯' },
   { id: 'role', label: '社会角色' },
   { id: 'meme', label: '迷因/自嘲' },
-  { id: 'original', label: '原创扩展' },
 ];
 
 export const PersonalitiesPage = () => {
   const [filter, setFilter] = useState<'all' | Faction>('all');
 
   const filtered = useMemo(() => {
-    return filter === 'all' ? personalities : personalities.filter((item) => item.faction === filter);
+    return filter === 'all'
+      ? personalities
+      : personalities.filter((item) => normalizeFaction(item.faction) === filter);
   }, [filter]);
 
   return (
@@ -37,9 +50,9 @@ export const PersonalitiesPage = () => {
             </p>
           </div>
           <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-1 xl:grid-cols-2">
-            {(['nihilist', 'rager', 'role', 'meme', 'original'] as Faction[]).map((key) => (
+            {publicFactionOrder.map((key) => (
               <div key={key} className="rounded-[24px] bg-slate-50 px-4 py-3 text-sm text-slate-500">
-                <span className="font-semibold" style={{ color: factionMeta[key].color }}>{factionMeta[key].label}</span>
+                <span className="font-semibold" style={{ color: factionMeta[key].color }}>{publicGroupLabels[key]}</span>
               </div>
             ))}
           </div>
