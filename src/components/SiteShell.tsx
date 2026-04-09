@@ -6,7 +6,7 @@ const navItems = [
   { to: '/personalities', label: '人格图鉴' },
 ];
 
-const devVersion = 'Dev v0.2.2';
+const devVersion = 'Dev v0.3.0';
 
 export const SiteShell = () => {
   return (
@@ -49,3 +49,4 @@ export const SiteShell = () => {
     </div>
   );
 };
+

@@ -1,7 +1,6 @@
 ﻿import { useEffect, useMemo, useState } from 'react';
 import { getPersonalityImagePath } from '../lib/personalityImages';
 import { characterRecipes } from '../lib/recipes';
-import type { CharacterRecipe } from '../lib/types';
 
 type CharacterArtProps = {
   recipeKey: string;
@@ -11,597 +10,597 @@ type CharacterArtProps = {
   floating?: boolean;
 };
 
+type Palette = (typeof characterRecipes)[keyof typeof characterRecipes]['palette'];
+type Emotion = 'blank' | 'smirk' | 'sad' | 'angry' | 'soft' | 'panic' | 'sleep' | 'stern' | 'drool' | 'cry' | 'manic' | 'dizzy' | 'greedy';
+type Scene = {
+  body: 'lean' | 'command' | 'offer' | 'curl' | 'stumble' | 'meditate' | 'strut' | 'march';
+  emotion: Emotion;
+  prop: string;
+  head: 'messy' | 'sharp' | 'soft' | 'hood' | 'burst' | 'grass' | 'poop' | 'mannequin' | 'default';
+  tilt?: number;
+  flip?: boolean;
+};
+
 const baseViewBox = '0 0 240 240';
-const faceInk = '#1a241f';
+const ink = '#18211d';
 
-type PosePointMap = {
-  head: string;
-  body: string;
-  leftArm: string;
-  rightArm: string;
-  leftLeg: string;
-  rightLeg: string;
-  belly?: string;
-};
-
-const poseMap: Record<CharacterRecipe['pose'], PosePointMap> = {
-  collapse: {
-    head: '78,70 118,46 154,72 144,126 92,124',
-    body: '74,122 118,102 154,122 140,174 86,166',
-    leftArm: '42,148 76,132 88,148 58,168',
-    rightArm: '132,136 170,150 158,166 126,154',
-    leftLeg: '88,166 112,166 102,210 78,206',
-    rightLeg: '110,166 136,170 132,210 112,206',
-  },
-  offer: {
-    head: '82,60 120,36 156,58 148,114 92,114',
-    body: '80,114 120,96 158,114 148,176 92,176',
-    leftArm: '42,132 88,112 98,126 58,156',
-    rightArm: '138,112 198,122 192,142 136,138',
-    leftLeg: '96,174 116,174 112,224 92,224',
-    rightLeg: '118,174 140,174 144,224 124,224',
-  },
-  clutch: {
-    head: '82,60 120,38 156,60 148,116 92,116',
-    body: '82,116 120,96 156,116 146,174 94,174',
-    leftArm: '66,136 104,122 122,148 84,162',
-    rightArm: '118,148 142,120 170,132 134,164',
-    leftLeg: '96,174 116,174 110,224 92,224',
-    rightLeg: '120,174 140,174 146,224 126,224',
-  },
-  panic: {
-    head: '82,58 120,34 158,58 148,116 92,116',
-    body: '82,116 120,98 158,116 146,172 94,172',
-    leftArm: '42,112 76,78 92,128 62,142',
-    rightArm: '150,82 198,116 176,144 144,126',
-    leftLeg: '94,170 116,170 108,224 88,224',
-    rightLeg: '118,170 142,170 152,224 130,224',
-  },
-  preach: {
-    head: '80,60 120,36 156,58 148,112 92,114',
-    body: '82,114 120,96 158,114 148,176 92,176',
-    leftArm: '44,138 90,118 102,136 62,156',
-    rightArm: '146,104 194,84 198,106 150,126',
-    leftLeg: '96,174 116,174 112,224 94,224',
-    rightLeg: '118,174 140,174 144,224 126,224',
-  },
-  kneel: {
-    head: '82,64 118,42 152,62 144,112 94,114',
-    body: '84,114 120,96 154,114 142,162 98,160',
-    leftArm: '64,134 98,124 104,142 72,156',
-    rightArm: '132,124 166,132 160,150 126,144',
-    leftLeg: '92,160 130,160 118,184 86,180',
-    rightLeg: '120,160 154,164 166,190 132,188',
-  },
-  lounge: {
-    head: '70,80 108,58 144,78 136,130 82,132',
-    body: '76,130 114,112 154,128 146,172 88,170',
-    leftArm: '48,146 86,142 86,160 48,160',
-    rightArm: '140,126 184,118 190,138 150,148',
-    leftLeg: '88,170 126,170 108,204 74,196',
-    rightLeg: '122,170 158,172 172,198 138,204',
-  },
-  march: {
-    head: '84,58 120,34 156,56 148,114 92,114',
-    body: '82,114 120,96 158,114 148,174 92,174',
-    leftArm: '44,144 86,122 94,138 58,162',
-    rightArm: '142,112 176,132 166,150 136,136',
-    leftLeg: '96,172 118,172 108,224 88,224',
-    rightLeg: '120,172 144,170 160,220 138,224',
-  },
-  stumble: {
-    head: '78,64 118,40 154,66 146,118 90,118',
-    body: '80,118 118,98 156,120 146,176 90,174',
-    leftArm: '52,126 90,118 86,140 54,146',
-    rightArm: '144,118 188,142 172,160 136,140',
-    leftLeg: '94,174 114,174 100,218 82,212',
-    rightLeg: '116,174 142,174 156,220 132,224',
-  },
-  float: {
-    head: '84,54 120,32 156,54 148,110 92,110',
-    body: '84,110 120,94 156,110 146,164 94,164',
-    leftArm: '54,126 86,114 94,132 58,146',
-    rightArm: '146,114 178,126 168,144 136,132',
-    leftLeg: '96,164 118,164 104,206 88,206',
-    rightLeg: '118,164 142,164 152,206 132,206',
-  },
-  pray: {
-    head: '84,58 120,34 156,58 148,112 92,112',
-    body: '84,112 120,94 156,112 146,170 94,170',
-    leftArm: '92,138 110,118 124,158 108,178',
-    rightArm: '124,138 138,118 154,156 132,178',
-    leftLeg: '96,170 118,170 110,222 92,222',
-    rightLeg: '118,170 140,170 148,222 126,222',
-  },
-  strut: {
-    head: '84,56 120,32 158,58 148,112 94,112',
-    body: '84,112 120,94 160,112 150,172 94,172',
-    leftArm: '54,130 88,110 96,126 60,148',
-    rightArm: '146,112 186,128 178,146 140,132',
-    leftLeg: '96,170 118,170 100,224 82,224',
-    rightLeg: '120,170 146,168 164,222 142,224',
-  },
-  coffin: {
-    head: '84,78 120,58 150,74 142,116 96,118',
-    body: '84,118 120,106 152,120 146,162 92,162',
-    leftArm: '92,130 112,120 118,138 100,150',
-    rightArm: '118,136 132,122 144,140 126,150',
-    leftLeg: '98,162 118,162 114,196 98,196',
-    rightLeg: '118,162 138,162 140,196 122,196',
-  },
-  bagged: {
-    head: '76,102 104,84 134,94 132,126 92,132',
-    body: '62,126 114,100 176,112 164,174 84,186',
-    leftArm: '92,138 118,130 116,146 90,152',
-    rightArm: '118,134 140,130 144,146 120,150',
-    leftLeg: '94,172 118,172 112,202 92,200',
-    rightLeg: '118,172 142,172 148,204 124,202',
-  },
-  meditate: {
-    head: '84,60 120,36 156,58 148,112 92,112',
-    body: '84,112 120,96 156,112 146,160 94,160',
-    leftArm: '70,142 100,132 108,150 78,156',
-    rightArm: '132,132 170,142 160,156 128,150',
-    leftLeg: '82,160 120,160 102,188 70,180',
-    rightLeg: '118,160 158,160 172,182 134,188',
-  },
-};
-
-const mouth = (expression: CharacterRecipe['expression']) => {
-  switch (expression) {
-    case 'angry':
-      return <path d="M95 112 L126 110" stroke={faceInk} strokeWidth="5" strokeLinecap="round" />;
-    case 'soft':
-      return <path d="M96 108 Q111 120 126 108" stroke={faceInk} strokeWidth="4" fill="none" strokeLinecap="round" />;
-    case 'panic':
-      return <ellipse cx="112" cy="110" rx="10" ry="15" fill={faceInk} />;
-    case 'drool':
-      return (
-        <>
-          <ellipse cx="112" cy="110" rx="16" ry="11" fill={faceInk} />
-          <path d="M120 118 Q126 132 122 146" stroke="#8fd7ff" strokeWidth="6" strokeLinecap="round" fill="none" />
-        </>
-      );
-    case 'cry':
-      return <path d="M96 118 Q112 96 128 118" stroke={faceInk} strokeWidth="5" fill="none" strokeLinecap="round" />;
-    case 'manic':
-      return <path d="M94 108 Q112 126 132 104" stroke={faceInk} strokeWidth="5" fill="none" strokeLinecap="round" />;
-    case 'dizzy':
-      return <path d="M94 112 Q112 124 130 112" stroke={faceInk} strokeWidth="4" fill="none" strokeLinecap="round" />;
-    case 'greedy':
-      return <path d="M94 108 Q112 118 130 108" stroke={faceInk} strokeWidth="4" fill="none" strokeLinecap="round" />;
-    case 'sad':
-      return <path d="M96 118 Q112 102 128 118" stroke={faceInk} strokeWidth="4" fill="none" strokeLinecap="round" />;
-    case 'smirk':
-      return <path d="M98 110 Q118 120 130 104" stroke={faceInk} strokeWidth="4" fill="none" strokeLinecap="round" />;
-    case 'stern':
-      return <path d="M96 111 Q112 106 128 111" stroke={faceInk} strokeWidth="4" fill="none" strokeLinecap="round" />;
-    case 'sleep':
-      return <path d="M100 110 L122 110" stroke={faceInk} strokeWidth="4" strokeLinecap="round" />;
-    default:
-      return <path d="M98 110 L126 110" stroke={faceInk} strokeWidth="4" strokeLinecap="round" />;
-  }
-};
-
-const eyes = (expression: CharacterRecipe['expression']) => {
-  switch (expression) {
-    case 'sleep':
-      return (
-        <>
-          <path d="M90 82 L102 78" stroke={faceInk} strokeWidth="4" strokeLinecap="round" />
-          <path d="M122 78 L134 82" stroke={faceInk} strokeWidth="4" strokeLinecap="round" />
-        </>
-      );
-    case 'angry':
-      return (
-        <>
-          <path d="M82 72 L102 78" stroke={faceInk} strokeWidth="6" strokeLinecap="round" />
-          <path d="M122 78 L142 72" stroke={faceInk} strokeWidth="6" strokeLinecap="round" />
-          <polygon points="90,88 102,82 98,94" fill={faceInk} />
-          <polygon points="126,82 138,88 130,94" fill={faceInk} />
-        </>
-      );
-    case 'panic':
-      return (
-        <>
-          <circle cx="94" cy="84" r="8" fill="#fff" stroke={faceInk} strokeWidth="3" />
-          <circle cx="130" cy="84" r="8" fill="#fff" stroke={faceInk} strokeWidth="3" />
-          <circle cx="96" cy="86" r="3" fill={faceInk} />
-          <circle cx="132" cy="86" r="3" fill={faceInk} />
-        </>
-      );
-    case 'drool':
-      return (
-        <>
-          <ellipse cx="92" cy="86" rx="12" ry="8" fill="#fff" stroke={faceInk} strokeWidth="3" />
-          <ellipse cx="132" cy="80" rx="7" ry="10" fill="#fff" stroke={faceInk} strokeWidth="3" />
-          <circle cx="94" cy="88" r="3" fill={faceInk} />
-          <circle cx="132" cy="82" r="3" fill={faceInk} />
-        </>
-      );
-    case 'cry':
-      return (
-        <>
-          <circle cx="94" cy="86" r="5" fill={faceInk} />
-          <circle cx="130" cy="86" r="5" fill={faceInk} />
-          <path d="M94 90 Q86 108 90 126" stroke="#75c8ff" strokeWidth="6" strokeLinecap="round" fill="none" />
-          <path d="M130 90 Q138 108 134 126" stroke="#75c8ff" strokeWidth="6" strokeLinecap="round" fill="none" />
-        </>
-      );
-    case 'manic':
-      return (
-        <>
-          <circle cx="94" cy="84" r="7" fill="#fff" stroke={faceInk} strokeWidth="3" />
-          <circle cx="130" cy="84" r="7" fill="#fff" stroke={faceInk} strokeWidth="3" />
-          <circle cx="96" cy="84" r="3" fill={faceInk} />
-          <circle cx="132" cy="84" r="3" fill={faceInk} />
-          <path d="M84 70 L98 66" stroke={faceInk} strokeWidth="4" strokeLinecap="round" />
-          <path d="M126 66 L140 70" stroke={faceInk} strokeWidth="4" strokeLinecap="round" />
-        </>
-      );
-    case 'dizzy':
-      return (
-        <>
-          <path d="M88 80 L100 92 M100 80 L88 92" stroke={faceInk} strokeWidth="4" strokeLinecap="round" />
-          <path d="M124 80 L136 92 M136 80 L124 92" stroke={faceInk} strokeWidth="4" strokeLinecap="round" />
-        </>
-      );
-    case 'greedy':
-      return (
-        <>
-          <circle cx="94" cy="84" r="7" fill="#fff8d1" stroke={faceInk} strokeWidth="3" />
-          <circle cx="130" cy="84" r="7" fill="#fff8d1" stroke={faceInk} strokeWidth="3" />
-          <path d="M92 80 L96 88 L90 88" fill={faceInk} />
-          <path d="M128 80 L132 88 L126 88" fill={faceInk} />
-        </>
-      );
-    default:
-      return (
-        <>
-          <circle cx="94" cy="84" r="5" fill={faceInk} />
-          <circle cx="130" cy="84" r="5" fill={faceInk} />
-        </>
-      );
-  }
-};
-
-const brows = (expression: CharacterRecipe['expression']) => {
-  switch (expression) {
-    case 'angry':
-      return null;
-    case 'panic':
-      return (
-        <>
-          <path d="M82 70 L98 60" stroke={faceInk} strokeWidth="4" strokeLinecap="round" />
-          <path d="M126 60 L142 70" stroke={faceInk} strokeWidth="4" strokeLinecap="round" />
-        </>
-      );
-    case 'cry':
-      return (
-        <>
-          <path d="M84 74 L100 72" stroke={faceInk} strokeWidth="4" strokeLinecap="round" />
-          <path d="M124 72 L140 74" stroke={faceInk} strokeWidth="4" strokeLinecap="round" />
-        </>
-      );
-    case 'stern':
-    case 'greedy':
-      return (
-        <>
-          <path d="M84 72 L100 70" stroke={faceInk} strokeWidth="4" strokeLinecap="round" />
-          <path d="M124 70 L140 72" stroke={faceInk} strokeWidth="4" strokeLinecap="round" />
-        </>
-      );
-    default:
-      return null;
-  }
-};
-
-const Face = ({ expression }: { expression: CharacterRecipe['expression'] }) => (
-  <>
-    {brows(expression)}
-    {eyes(expression)}
-    {mouth(expression)}
-  </>
+const Zig = ({ x, y, size = 10, color = '#64748b' }: { x: number; y: number; size?: number; color?: string }) => (
+  <path
+    d={`M ${x} ${y} l ${size * 0.4} ${-size * 0.6} l ${size * 0.4} 0 l ${-size * 0.5} ${size * 0.8} l ${size * 0.7} 0 l ${-size * 0.5} ${size * 0.8}`}
+    fill="none"
+    stroke={color}
+    strokeWidth="4"
+    strokeLinecap="round"
+    strokeLinejoin="round"
+  />
 );
 
-const Accessory = ({ name, recipe }: { name: string; recipe: CharacterRecipe }) => {
-  const { accent, accentSoft, hair, outfit, outfitShadow, skin, skinShadow } = recipe.palette;
 
-  switch (name) {
-    case 'cap':
-      return (
+const sceneMap: Record<string, Scene> = {
+  IMSB: { body: 'lean', emotion: 'cry', prop: 'self-arrow', head: 'messy', tilt: -8 },
+  BOSS: { body: 'command', emotion: 'stern', prop: 'pointer', head: 'sharp', tilt: -3 },
+  MUM: { body: 'offer', emotion: 'soft', prop: 'baby', head: 'soft', tilt: -4 },
+  FAKE: { body: 'strut', emotion: 'smirk', prop: 'mannequin-frame', head: 'mannequin', tilt: -2 },
+  DEAD: { body: 'curl', emotion: 'sleep', prop: 'coffin', head: 'default' },
+  ZZZZ: { body: 'curl', emotion: 'sleep', prop: 'sleeping-bag', head: 'soft' },
+  GOGO: { body: 'march', emotion: 'stern', prop: 'walking-stick', head: 'default', tilt: -8 },
+  FUCK: { body: 'march', emotion: 'angry', prop: 'weed-eruption', head: 'grass', tilt: -12 },
+  CTRL: { body: 'command', emotion: 'greedy', prop: 'strings', head: 'sharp', tilt: -2 },
+  HHHH: { body: 'curl', emotion: 'drool', prop: 'laugh-cloud', head: 'soft', tilt: 12 },
+  SEXY: { body: 'strut', emotion: 'greedy', prop: 'fan', head: 'sharp', tilt: -8 },
+  OJBK: { body: 'offer', emotion: 'blank', prop: 'shrug-cloud', head: 'default', tilt: 5 },
+  POOR: { body: 'lean', emotion: 'cry', prop: 'empty-bowl', head: 'messy', tilt: -10 },
+  'OH-NO': { body: 'stumble', emotion: 'panic', prop: 'alarm', head: 'burst', tilt: 10 },
+  MONK: { body: 'meditate', emotion: 'soft', prop: 'aura', head: 'soft' },
+  SHIT: { body: 'stumble', emotion: 'dizzy', prop: 'bad-luck', head: 'poop', tilt: 9 },
+  'THAN-K': { body: 'offer', emotion: 'cry', prop: 'prayer', head: 'soft' },
+  MALO: { body: 'march', emotion: 'sad', prop: 'brick', head: 'messy', tilt: -8 },
+  'ATM-er': { body: 'offer', emotion: 'sad', prop: 'resource-drain', head: 'soft', tilt: -6 },
+  THINK: { body: 'lean', emotion: 'stern', prop: 'thought-cloud', head: 'default' },
+  SOLO: { body: 'curl', emotion: 'sad', prop: 'hoodie-shell', head: 'hood', tilt: -6 },
+  'LOVE-R': { body: 'strut', emotion: 'greedy', prop: 'bouquet', head: 'soft', tilt: -10 },
+  'WOC!': { body: 'stumble', emotion: 'panic', prop: 'shock-burst', head: 'burst', tilt: 14 },
+  DRUNK: { body: 'stumble', emotion: 'dizzy', prop: 'bottle', head: 'messy', tilt: 14 },
+  IMFW: { body: 'lean', emotion: 'cry', prop: 'white-flag', head: 'messy', tilt: -7 },
+  NPC: { body: 'offer', emotion: 'blank', prop: 'dialog-box', head: 'default' },
+  WIFI: { body: 'stumble', emotion: 'dizzy', prop: 'signal', head: 'default' },
+  HEAL: { body: 'offer', emotion: 'soft', prop: 'heal-staff', head: 'soft', tilt: -4 },
+  YOLO: { body: 'strut', emotion: 'manic', prop: 'firework', head: 'burst', tilt: -10 },
+};
+
+const Face = ({ emotion }: { emotion: Emotion }) => {
+  const eyes = (() => {
+    switch (emotion) {
+      case 'sleep':
+        return (
+          <>
+            <path d="M96 84 L108 81" stroke={ink} strokeWidth="4" strokeLinecap="round" />
+            <path d="M126 81 L138 84" stroke={ink} strokeWidth="4" strokeLinecap="round" />
+          </>
+        );
+      case 'panic':
+      case 'manic':
+        return (
+          <>
+            <circle cx="102" cy="88" r="8" fill="#fff" stroke={ink} strokeWidth="3" />
+            <circle cx="134" cy="86" r="8" fill="#fff" stroke={ink} strokeWidth="3" />
+            <circle cx="104" cy="89" r="3" fill={ink} />
+            <circle cx="136" cy="87" r="3" fill={ink} />
+          </>
+        );
+      case 'drool':
+        return (
+          <>
+            <ellipse cx="102" cy="88" rx="11" ry="8" fill="#fff" stroke={ink} strokeWidth="3" />
+            <ellipse cx="134" cy="84" rx="7" ry="10" fill="#fff" stroke={ink} strokeWidth="3" />
+            <circle cx="103" cy="89" r="3" fill={ink} />
+            <circle cx="134" cy="85" r="3" fill={ink} />
+          </>
+        );
+      case 'angry':
+        return (
+          <>
+            <path d="M90 80 L106 86" stroke={ink} strokeWidth="5" strokeLinecap="round" />
+            <path d="M128 86 L144 80" stroke={ink} strokeWidth="5" strokeLinecap="round" />
+            <polygon points="98,90 106,86 104,96" fill={ink} />
+            <polygon points="130,86 138,90 132,96" fill={ink} />
+          </>
+        );
+      case 'greedy':
+        return (
+          <>
+            <circle cx="102" cy="88" r="7" fill="#fff6c6" stroke={ink} strokeWidth="3" />
+            <circle cx="134" cy="86" r="7" fill="#fff6c6" stroke={ink} strokeWidth="3" />
+            <path d="M100 84 L104 92 L98 92" fill={ink} />
+            <path d="M132 82 L136 90 L130 90" fill={ink} />
+          </>
+        );
+      case 'dizzy':
+        return (
+          <>
+            <path d="M96 82 L108 94 M108 82 L96 94" stroke={ink} strokeWidth="4" strokeLinecap="round" />
+            <path d="M128 80 L140 92 M140 80 L128 92" stroke={ink} strokeWidth="4" strokeLinecap="round" />
+          </>
+        );
+      default:
+        return (
+          <>
+            <circle cx="102" cy="88" r="5" fill={ink} />
+            <circle cx="134" cy="86" r="5" fill={ink} />
+          </>
+        );
+    }
+  })();
+
+  const brows = (() => {
+    switch (emotion) {
+      case 'panic':
+        return (
+          <>
+            <path d="M92 76 L106 68" stroke={ink} strokeWidth="4" strokeLinecap="round" />
+            <path d="M130 68 L144 76" stroke={ink} strokeWidth="4" strokeLinecap="round" />
+          </>
+        );
+      case 'cry':
+      case 'sad':
+        return (
+          <>
+            <path d="M92 78 L106 76" stroke={ink} strokeWidth="4" strokeLinecap="round" />
+            <path d="M130 76 L144 78" stroke={ink} strokeWidth="4" strokeLinecap="round" />
+          </>
+        );
+      case 'stern':
+      case 'greedy':
+        return (
+          <>
+            <path d="M92 76 L106 74" stroke={ink} strokeWidth="4" strokeLinecap="round" />
+            <path d="M130 74 L144 76" stroke={ink} strokeWidth="4" strokeLinecap="round" />
+          </>
+        );
+      default:
+        return null;
+    }
+  })();
+
+  const mouth = (() => {
+    switch (emotion) {
+      case 'angry':
+        return <path d="M102 116 L132 112" stroke={ink} strokeWidth="5" strokeLinecap="round" />;
+      case 'soft':
+        return <path d="M102 112 Q118 122 132 110" stroke={ink} strokeWidth="4" fill="none" strokeLinecap="round" />;
+      case 'panic':
+        return <ellipse cx="118" cy="112" rx="10" ry="14" fill={ink} />;
+      case 'drool':
+        return (
+          <>
+            <ellipse cx="118" cy="113" rx="16" ry="11" fill={ink} />
+            <path d="M126 120 Q132 136 128 148" stroke="#8fd7ff" strokeWidth="6" strokeLinecap="round" fill="none" />
+          </>
+        );
+      case 'cry':
+        return <path d="M102 120 Q118 100 134 120" stroke={ink} strokeWidth="5" fill="none" strokeLinecap="round" />;
+      case 'manic':
+        return <path d="M100 112 Q120 126 138 108" stroke={ink} strokeWidth="5" fill="none" strokeLinecap="round" />;
+      case 'dizzy':
+        return <path d="M100 114 Q118 124 136 114" stroke={ink} strokeWidth="4" fill="none" strokeLinecap="round" />;
+      case 'greedy':
+      case 'smirk':
+        return <path d="M102 112 Q122 122 136 106" stroke={ink} strokeWidth="4" fill="none" strokeLinecap="round" />;
+      case 'sad':
+        return <path d="M102 120 Q118 106 134 120" stroke={ink} strokeWidth="4" fill="none" strokeLinecap="round" />;
+      case 'sleep':
+      case 'blank':
+        return <path d="M104 112 L132 112" stroke={ink} strokeWidth="4" strokeLinecap="round" />;
+      default:
+        return <path d="M102 112 Q118 116 134 112" stroke={ink} strokeWidth="4" fill="none" strokeLinecap="round" />;
+    }
+  })();
+
+  return (
+    <>
+      {brows}
+      {eyes}
+      {mouth}
+      {emotion === 'cry' ? (
         <>
-          <polygon points="82,58 120,34 156,56 140,68 96,70" fill={accent} />
-          <polygon points="140,66 170,72 146,84" fill={outfitShadow} />
+          <path d="M100 94 Q92 118 96 148" stroke="#79c9ff" strokeWidth="8" strokeLinecap="round" fill="none" />
+          <path d="M136 92 Q144 116 140 148" stroke="#79c9ff" strokeWidth="8" strokeLinecap="round" fill="none" />
         </>
-      );
-    case 'pointer-stick':
-      return <path d="M170 92 L202 66" stroke={hair} strokeWidth="6" strokeLinecap="round" />;
-    case 'baby':
+      ) : null}
+    </>
+  );
+};
+
+const Head = ({ palette, scene }: { palette: Palette; scene: Scene }) => {
+  const hair = (() => {
+    switch (scene.head) {
+      case 'messy':
+        return (
+          <>
+            <polygon points="82,68 92,44 104,68" fill={palette.hair} />
+            <polygon points="98,62 114,32 126,66" fill={palette.hair} />
+            <polygon points="122,64 140,40 148,70" fill={palette.hair} />
+          </>
+        );
+      case 'sharp':
+        return <polygon points="82,74 104,52 146,58 154,82 84,84" fill={palette.hair} />;
+      case 'soft':
+        return <polygon points="82,76 94,54 138,52 154,76 148,88 86,88" fill={palette.hair} />;
+      case 'hood':
+        return <polygon points="74,70 94,44 142,44 160,74 150,98 86,98" fill={palette.hair} />;
+      case 'burst':
+        return (
+          <>
+            <polygon points="84,70 90,36 104,70" fill={palette.hair} />
+            <polygon points="98,64 116,24 126,68" fill={palette.hair} />
+            <polygon points="122,68 136,34 144,74" fill={palette.hair} />
+            <polygon points="142,74 162,54 158,86" fill={palette.hair} />
+          </>
+        );
+      case 'grass':
+        return (
+          <>
+            <polygon points="80,72 86,38 98,72" fill={palette.accent} />
+            <polygon points="94,68 108,18 118,72" fill={palette.accent} />
+            <polygon points="114,68 126,10 136,72" fill={palette.accent} />
+            <polygon points="132,72 146,24 154,76" fill={palette.accent} />
+            <polygon points="148,78 162,42 168,84" fill={palette.accent} />
+          </>
+        );
+      case 'poop':
+        return (
+          <>
+            <path d="M82 88 Q86 64 98 62 Q94 48 110 46 Q110 32 128 38 Q142 40 140 54 Q154 58 152 72 Q164 78 158 92 Z" fill="#8f6a48" />
+            <path d="M110 48 Q124 54 130 64" stroke="#a58261" strokeWidth="4" strokeLinecap="round" fill="none" />
+          </>
+        );
+      case 'mannequin':
+        return (
+          <>
+            <polygon points="82,76 104,52 144,56 154,84 146,98 92,98" fill="#f4f7f6" />
+            <polygon points="94,66 134,62 144,76 138,92 98,92" fill="#dfe7e3" />
+            <path d="M86 76 L150 76" stroke="#c3cfcb" strokeWidth="3" />
+          </>
+        );
+      default:
+        return <polygon points="82,76 96,52 140,52 154,78 146,92 86,92" fill={palette.hair} />;
+    }
+  })();
+
+  return (
+    <g>
+      <polygon points="84,86 102,58 142,58 154,88 146,124 92,124" fill={palette.skin} />
+      <polygon points="120,58 146,68 142,124 118,118" fill={palette.skinShadow} opacity="0.9" />
+      {hair}
+      <Face emotion={scene.emotion} />
+    </g>
+  );
+};
+
+const Torso = ({ palette, scene }: { palette: Palette; scene: Scene }) => {
+  switch (scene.body) {
+    case 'command':
       return (
-        <g transform="translate(146 132)">
-          <polygon points="0,0 24,8 10,38 -12,28" fill={accentSoft} />
-          <circle cx="6" cy="8" r="9" fill={skin} />
-          <circle cx="4" cy="6" r="2" fill={faceInk} />
-          <circle cx="10" cy="6" r="2" fill={faceInk} />
+        <g>
+          <polygon points="92,126 124,110 156,126 148,186 100,186" fill={palette.outfit} />
+          <polygon points="122,112 154,126 146,186 122,186" fill={palette.outfitShadow} />
+          <polygon points="72,132 98,122 106,136 78,150" fill={palette.skin} />
+          <polygon points="144,126 188,104 194,120 152,144" fill={palette.skinShadow} />
+          <polygon points="102,184 120,184 116,224 96,224" fill={palette.outfitShadow} />
+          <polygon points="122,184 142,184 150,224 128,224" fill={palette.outfit} />
         </g>
       );
-    case 'dark-circles':
+    case 'offer':
+      return (
+        <g>
+          <polygon points="92,126 122,112 154,126 146,186 100,186" fill={palette.outfit} />
+          <polygon points="122,112 152,126 144,186 122,186" fill={palette.outfitShadow} />
+          <polygon points="72,144 106,132 114,148 80,164" fill={palette.skin} />
+          <polygon points="134,136 176,144 168,160 132,152" fill={palette.skinShadow} />
+          <polygon points="102,184 122,184 116,224 96,224" fill={palette.outfitShadow} />
+          <polygon points="122,184 142,184 146,224 126,224" fill={palette.outfit} />
+        </g>
+      );
+    case 'curl':
+      return (
+        <g>
+          <polygon points="92,130 120,116 152,132 144,170 98,170" fill={palette.outfit} />
+          <polygon points="118,118 150,132 142,170 120,170" fill={palette.outfitShadow} />
+          <polygon points="84,156 112,146 120,164 90,176" fill={palette.skin} />
+          <polygon points="120,154 148,146 156,164 128,176" fill={palette.skinShadow} />
+          <polygon points="90,168 128,166 118,198 84,190" fill={palette.outfitShadow} />
+          <polygon points="122,168 154,170 164,196 128,196" fill={palette.outfit} />
+        </g>
+      );
+    case 'stumble':
+      return (
+        <g>
+          <polygon points="92,126 122,112 154,128 144,186 98,184" fill={palette.outfit} />
+          <polygon points="122,112 154,128 144,186 122,186" fill={palette.outfitShadow} />
+          <polygon points="76,136 108,126 110,146 82,154" fill={palette.skin} />
+          <polygon points="140,132 184,150 172,168 136,150" fill={palette.skinShadow} />
+          <polygon points="100,184 120,184 106,224 86,220" fill={palette.outfitShadow} />
+          <polygon points="122,184 146,182 162,222 140,224" fill={palette.outfit} />
+        </g>
+      );
+    case 'meditate':
+      return (
+        <g>
+          <polygon points="92,126 122,112 154,126 144,162 100,162" fill={palette.outfit} />
+          <polygon points="122,112 152,126 142,162 120,162" fill={palette.outfitShadow} />
+          <polygon points="84,148 110,142 114,156 90,162" fill={palette.skin} />
+          <polygon points="132,142 160,148 152,162 128,156" fill={palette.skinShadow} />
+          <polygon points="80,162 124,162 104,190 70,182" fill={palette.outfitShadow} />
+          <polygon points="118,162 160,162 172,184 134,190" fill={palette.outfit} />
+        </g>
+      );
+    case 'strut':
+      return (
+        <g>
+          <polygon points="92,126 124,110 158,126 148,184 100,184" fill={palette.outfit} />
+          <polygon points="122,110 156,126 146,184 122,184" fill={palette.outfitShadow} />
+          <polygon points="74,142 102,128 112,144 84,162" fill={palette.skin} />
+          <polygon points="142,128 174,138 168,156 138,146" fill={palette.skinShadow} />
+          <polygon points="100,182 120,182 106,224 86,224" fill={palette.outfitShadow} />
+          <polygon points="122,182 146,180 160,220 138,224" fill={palette.outfit} />
+        </g>
+      );
+    case 'march':
+      return (
+        <g>
+          <polygon points="92,126 124,110 156,126 148,184 100,184" fill={palette.outfit} />
+          <polygon points="122,110 154,126 146,184 122,184" fill={palette.outfitShadow} />
+          <polygon points="74,144 102,130 108,146 82,164" fill={palette.skin} />
+          <polygon points="144,128 176,144 168,160 138,146" fill={palette.skinShadow} />
+          <polygon points="100,182 120,182 110,224 90,224" fill={palette.outfitShadow} />
+          <polygon points="122,182 146,180 152,212 132,224" fill={palette.outfit} />
+        </g>
+      );
+    default:
+      return (
+        <g>
+          <polygon points="92,126 122,112 154,128 144,186 100,186" fill={palette.outfit} />
+          <polygon points="122,112 154,128 144,186 122,186" fill={palette.outfitShadow} />
+          <polygon points="76,140 106,130 112,148 82,158" fill={palette.skin} />
+          <polygon points="136,134 170,144 162,160 132,150" fill={palette.skinShadow} />
+          <polygon points="102,184 120,184 116,224 94,224" fill={palette.outfitShadow} />
+          <polygon points="122,184 142,184 146,224 126,224" fill={palette.outfit} />
+        </g>
+      );
+  }
+};
+
+const PropLayer = ({ scene, palette }: { scene: Scene; palette: Palette }) => {
+  switch (scene.prop) {
+    case 'self-arrow':
       return (
         <>
-          <ellipse cx="94" cy="93" rx="8" ry="4" fill="#8b8f99" opacity="0.45" />
-          <ellipse cx="130" cy="93" rx="8" ry="4" fill="#8b8f99" opacity="0.45" />
+          <path d="M62 112 Q86 100 100 110" stroke="#ff7d7d" strokeWidth="5" fill="none" strokeLinecap="round" />
+          <polygon points="92,100 106,112 88,114" fill="#ff7d7d" />
         </>
       );
-    case 'grass-hair':
+    case 'pointer':
+      return <path d="M174 94 L210 66" stroke={palette.hair} strokeWidth="6" strokeLinecap="round" />;
+    case 'baby':
+      return (
+        <g transform="translate(152 138)">
+          <polygon points="0,0 24,10 10,40 -12,28" fill={palette.accentSoft} />
+          <circle cx="8" cy="8" r="10" fill={palette.skin} />
+          <circle cx="5" cy="7" r="2" fill={ink} />
+          <circle cx="11" cy="7" r="2" fill={ink} />
+        </g>
+      );
+    case 'mannequin-frame':
       return (
         <>
-          <polygon points="76,58 84,28 92,56" fill={accent} />
-          <polygon points="90,56 102,18 112,56" fill={accent} />
-          <polygon points="106,56 118,8 128,56" fill={accent} />
-          <polygon points="124,56 136,20 144,58" fill={accent} />
-          <polygon points="140,58 154,30 162,60" fill={accent} />
+          <rect x="66" y="64" width="108" height="136" rx="24" fill="none" stroke="#dfe7e3" strokeWidth="6" />
+          <rect x="84" y="116" width="70" height="18" rx="9" fill="#eef2ef" />
         </>
       );
-    case 'weed-arm':
+    case 'coffin':
       return (
         <>
-          <path d="M160 136 Q190 122 202 98" stroke={accent} strokeWidth="10" fill="none" strokeLinecap="round" />
-          <polygon points="188,102 204,84 210,108" fill={accentSoft} />
+          <polygon points="48,102 120,54 188,100 180,178 112,222 44,170" fill="#2f3734" />
+          <polygon points="62,108 120,70 172,104 164,166 112,204 58,164" fill="#474f4c" />
+          <polygon points="78,116 120,88 154,112 148,166 112,192 78,164" fill={palette.accentSoft} />
         </>
       );
-    case 'control-strings':
+    case 'sleeping-bag':
       return (
         <>
-          <path d="M176 84 L176 126" stroke={faceInk} strokeWidth="2" />
-          <path d="M192 74 L188 132" stroke={faceInk} strokeWidth="2" />
-          <circle cx="176" cy="84" r="4" fill={accent} />
-          <circle cx="192" cy="74" r="4" fill={accent} />
+          <polygon points="46,148 108,98 190,112 176,192 90,208" fill="#79b866" />
+          <polygon points="54,150 110,106 176,118 166,184 92,198" fill={palette.accentSoft} />
+          <path d="M164 116 L146 186" stroke="#f2f6ef" strokeWidth="5" strokeLinecap="round" />
+          <circle cx="162" cy="118" r="5" fill="#f2f6ef" />
+          <Zig x={172} y={102} size={10} />
+          <Zig x={188} y={82} size={14} />
         </>
       );
-    case 'headband':
-      return <polygon points="80,66 154,66 146,76 88,76" fill={accent} />;
-    case 'drool':
-      return <path d="M126 120 Q132 134 128 146" stroke="#88d7ff" strokeWidth="7" strokeLinecap="round" fill="none" />;
-    case 'cheek-blush':
+    case 'walking-stick':
+      return <path d="M62 90 L52 208" stroke={palette.hair} strokeWidth="8" strokeLinecap="round" />;
+    case 'weed-eruption':
       return (
         <>
-          <ellipse cx="80" cy="104" rx="12" ry="6" fill="#ef9ab1" opacity="0.5" />
-          <ellipse cx="148" cy="104" rx="12" ry="6" fill="#ef9ab1" opacity="0.5" />
+          <path d="M152 140 Q188 126 208 96" stroke={palette.accent} strokeWidth="11" fill="none" strokeLinecap="round" />
+          <polygon points="190,96 208,74 214,104" fill={palette.accentSoft} />
+          <polygon points="152,88 178,62 184,96" fill={palette.accent} />
         </>
       );
-    case 'heart-hair':
+    case 'strings':
       return (
         <>
-          <circle cx="96" cy="54" r="12" fill={accent} />
-          <circle cx="112" cy="52" r="12" fill={accent} />
-          <polygon points="86,60 122,60 104,84" fill={accent} />
+          <path d="M176 70 L172 130" stroke={ink} strokeWidth="2" />
+          <path d="M194 60 L186 138" stroke={ink} strokeWidth="2" />
+          <circle cx="176" cy="70" r="4" fill={palette.accent} />
+          <circle cx="194" cy="60" r="4" fill={palette.accent} />
+        </>
+      );
+    case 'laugh-cloud':
+      return (
+        <>
+          <circle cx="182" cy="82" r="14" fill="#eef2ef" />
+          <circle cx="198" cy="86" r="10" fill="#eef2ef" />
+          <path d="M176 84 Q181 78 186 84" stroke="#64748b" strokeWidth="3" fill="none" strokeLinecap="round" />
+          <path d="M184 90 Q189 84 194 90" stroke="#64748b" strokeWidth="3" fill="none" strokeLinecap="round" />
         </>
       );
     case 'fan':
       return (
         <>
-          <polygon points="168,132 194,120 196,154 170,152" fill={accentSoft} />
-          <path d="M172 126 L190 150" stroke={accent} strokeWidth="3" />
+          <polygon points="166,140 196,126 196,160 170,158" fill={palette.accentSoft} />
+          <path d="M170 130 L190 154" stroke={palette.accent} strokeWidth="3" />
         </>
       );
-    case 'ok-hand':
-      return <polygon points="170,150 186,138 194,152 182,164" fill={skin} />;
     case 'shrug-cloud':
       return (
         <>
-          <circle cx="182" cy="92" r="12" fill="#eceff1" />
-          <circle cx="196" cy="94" r="9" fill="#eceff1" />
-          <text x="176" y="98" fontSize="12" fill="#7b8794">?</text>
+          <circle cx="184" cy="86" r="14" fill="#edf1f4" />
+          <circle cx="198" cy="90" r="10" fill="#edf1f4" />
+          <circle cx="182" cy="90" r="2.5" fill="#94a3b8" />
+          <path d="M184 84 Q188 76 194 84 Q190 90 186 94" stroke="#94a3b8" strokeWidth="3" fill="none" strokeLinecap="round" />
         </>
       );
-    case 'torn-bag':
-      return <polygon points="40,156 70,146 78,188 52,196" fill={accent} />;
     case 'empty-bowl':
-      return <path d="M64 194 Q82 206 100 194" stroke={accentSoft} strokeWidth="7" fill="none" strokeLinecap="round" />;
-    case 'panic-hands':
       return (
         <>
-          <polygon points="36,112 58,86 72,124 52,136" fill={skin} />
-          <polygon points="154,90 198,110 178,136 144,122" fill={skinShadow} />
+          <polygon points="40,156 72,146 80,188 54,198" fill={palette.accent} />
+          <path d="M64 194 Q84 208 102 194" stroke={palette.accentSoft} strokeWidth="7" fill="none" strokeLinecap="round" />
         </>
       );
-    case 'alarm-lines':
+    case 'alarm':
       return (
         <>
-          <path d="M76 44 L66 24" stroke={accent} strokeWidth="4" strokeLinecap="round" />
-          <path d="M120 28 L120 10" stroke={accent} strokeWidth="4" strokeLinecap="round" />
-          <path d="M164 44 L176 24" stroke={accent} strokeWidth="4" strokeLinecap="round" />
+          <polygon points="176,56 184,40 192,56 208,64 192,72 184,88 176,72 160,64" fill={palette.accent} />
+          <path d="M80 46 L68 26" stroke={palette.accent} strokeWidth="4" strokeLinecap="round" />
+          <path d="M120 30 L120 12" stroke={palette.accent} strokeWidth="4" strokeLinecap="round" />
         </>
       );
-    case 'beads':
+    case 'aura':
       return (
         <>
-          <circle cx="104" cy="136" r="5" fill={accentSoft} />
-          <circle cx="116" cy="142" r="5" fill={accentSoft} />
-          <circle cx="128" cy="146" r="5" fill={accentSoft} />
+          <ellipse cx="120" cy="194" rx="78" ry="24" fill="none" stroke={palette.accent} strokeWidth="4" opacity="0.45" />
+          <circle cx="120" cy="56" r="10" fill={palette.accentSoft} opacity="0.8" />
         </>
       );
-    case 'aura-ring':
-      return <ellipse cx="120" cy="152" rx="72" ry="20" fill="none" stroke={accent} strokeWidth="4" opacity="0.45" />;
-    case 'office-shirt':
-      return <polygon points="102,120 120,138 138,120 132,174 108,174" fill={accentSoft} />;
-    case 'poop-cloud':
+    case 'bad-luck':
       return (
         <>
-          <path d="M174 162 Q186 146 176 132 Q188 126 178 116 Q158 120 156 144 Q152 160 174 162" fill="#8c6948" />
-          <path d="M186 118 L198 106" stroke="#95a5a6" strokeWidth="3" strokeLinecap="round" />
+          <path d="M166 156 Q182 138 176 120 Q188 116 180 106 Q160 112 156 136 Q152 154 166 156" fill="#8f6a48" />
+          <path d="M186 118 L198 108" stroke="#94a3b8" strokeWidth="3" strokeLinecap="round" />
         </>
       );
-    case 'prayer-hands':
+    case 'prayer':
       return (
         <>
-          <polygon points="100,154 114,130 126,154 114,182" fill={skin} />
-          <polygon points="116,154 128,128 144,154 128,182" fill={skinShadow} />
+          <polygon points="108,152 120,128 132,154 120,182" fill={palette.skin} />
+          <polygon points="120,152 132,126 146,154 132,182" fill={palette.skinShadow} />
         </>
       );
-    case 'thick-tears':
+    case 'brick':
       return (
         <>
-          <path d="M92 94 Q80 122 84 156" stroke="#7ac7ff" strokeWidth="10" strokeLinecap="round" fill="none" />
-          <path d="M132 94 Q144 122 140 156" stroke="#7ac7ff" strokeWidth="10" strokeLinecap="round" fill="none" />
+          <path d="M150 170 Q182 182 174 206" stroke={palette.accent} strokeWidth="8" fill="none" strokeLinecap="round" />
+          <polygon points="54,108 98,98 102,122 58,132" fill="#b26543" />
         </>
       );
-    case 'monkey-tail':
-      return <path d="M156 164 Q188 176 172 206" stroke={accent} strokeWidth="8" fill="none" strokeLinecap="round" />;
-    case 'brick-load':
-      return <polygon points="54,108 94,98 100,120 58,132" fill="#b26343" />;
-    case 'cash':
+    case 'resource-drain':
       return (
         <>
-          <polygon points="140,118 196,108 202,136 146,146" fill="#79b55f" />
-          <rect x="154" y="116" width="20" height="5" fill="#cde6b6" />
+          <polygon points="138,120 200,108 206,138 144,148" fill="#7fb861" />
+          <circle cx="182" cy="84" r="9" fill="#f1d36a" />
+          <circle cx="198" cy="96" r="7" fill="#f1d36a" />
+          <path d="M152 150 Q176 166 204 168" stroke="#ef7b96" strokeWidth="5" fill="none" strokeLinecap="round" />
+          <path d="M166 154 L176 148 L176 160 Z" fill="#ef7b96" />
         </>
       );
-    case 'coin-rain':
-      return (
-        <>
-          <circle cx="180" cy="74" r="8" fill="#f2d36c" />
-          <circle cx="198" cy="88" r="7" fill="#f2d36c" />
-          <circle cx="168" cy="96" r="7" fill="#f2d36c" />
-        </>
-      );
-    case 'big-head':
-      return <polygon points="70,56 120,28 170,58 156,124 84,122" fill="rgba(255,255,255,0.15)" />;
     case 'thought-cloud':
       return (
         <>
+          <polygon points="70,56 122,26 172,56 160,126 86,122" fill="rgba(255,255,255,0.15)" />
           <circle cx="188" cy="76" r="14" fill="#eceff1" />
           <circle cx="204" cy="82" r="11" fill="#eceff1" />
-          <text x="182" y="84" fontSize="12" fill="#667085">...</text>
+          <circle cx="183" cy="80" r="2.5" fill="#667085" />
+          <circle cx="191" cy="80" r="2.5" fill="#667085" />
+          <circle cx="199" cy="80" r="2.5" fill="#667085" />
         </>
       );
-    case 'hoodie':
-      return <polygon points="82,106 120,86 156,106 144,176 92,176" fill={hair} />;
-    case 'void-shadow':
-      return <ellipse cx="120" cy="214" rx="64" ry="18" fill="#2f3640" opacity="0.22" />;
-    case 'heart-glasses':
+    case 'hoodie-shell':
       return (
         <>
-          <circle cx="96" cy="86" r="12" fill={accent} />
-          <circle cx="108" cy="86" r="12" fill={accent} />
-          <polygon points="88,92 118,92 102,110" fill={accent} />
-          <circle cx="126" cy="86" r="12" fill={accent} />
-          <circle cx="138" cy="86" r="12" fill={accent} />
-          <polygon points="118,92 148,92 132,110" fill={accent} />
+          <polygon points="74,104 120,84 160,104 148,184 90,184" fill={palette.hair} />
+          <ellipse cx="118" cy="216" rx="62" ry="16" fill="#2f3640" opacity="0.22" />
         </>
       );
     case 'bouquet':
       return (
         <>
-          <polygon points="164,132 186,122 178,156" fill="#7cc26b" />
-          <circle cx="180" cy="118" r="8" fill="#ef7b96" />
-          <circle cx="192" cy="126" r="8" fill="#ffcc66" />
-          <circle cx="172" cy="128" r="8" fill="#ef7b96" />
-        </>
-      );
-    case 'burst-hair':
-      return (
-        <>
-          <polygon points="76,56 82,30 94,56" fill={accent} />
-          <polygon points="92,54 106,18 116,56" fill={accent} />
-          <polygon points="114,56 128,22 134,58" fill={accent} />
-          <polygon points="132,58 150,34 154,62" fill={accent} />
+          <circle cx="100" cy="86" r="12" fill={palette.accent} />
+          <circle cx="112" cy="84" r="12" fill={palette.accent} />
+          <polygon points="92,92 120,92 106,108" fill={palette.accent} />
+          <circle cx="132" cy="86" r="12" fill={palette.accent} />
+          <circle cx="144" cy="84" r="12" fill={palette.accent} />
+          <polygon points="124,92 152,92 138,108" fill={palette.accent} />
+          <polygon points="168,140 190,128 180,162" fill="#7cc26b" />
+          <circle cx="180" cy="122" r="8" fill="#ef7b96" />
+          <circle cx="192" cy="130" r="8" fill="#ffcc66" />
         </>
       );
     case 'shock-burst':
-      return <polygon points="176,60 184,42 190,60 208,68 190,76 182,94 176,76 158,68" fill={accent} />;
+      return <polygon points="176,58 184,42 190,58 208,66 190,74 182,92 176,74 158,66" fill={palette.accent} />;
     case 'bottle':
       return (
         <>
-          <rect x="162" y="138" width="18" height="42" rx="6" fill={accent} />
-          <rect x="168" y="128" width="6" height="12" rx="2" fill={accentSoft} />
-        </>
-      );
-    case 'spill':
-      return <path d="M180 178 Q194 182 202 198" stroke="#7ac7ff" strokeWidth="6" strokeLinecap="round" fill="none" />;
-    case 'trash-crown':
-      return (
-        <>
-          <polygon points="80,62 92,48 104,64 116,44 128,64 144,50 152,68" fill={accent} />
-          <polygon points="84,68 150,68 144,76 88,76" fill={outfitShadow} />
+          <rect x="164" y="140" width="18" height="42" rx="6" fill={palette.accent} />
+          <rect x="170" y="130" width="6" height="12" rx="2" fill={palette.accentSoft} />
+          <path d="M180 178 Q194 182 202 198" stroke="#7ac7ff" strokeWidth="6" strokeLinecap="round" fill="none" />
         </>
       );
     case 'white-flag':
       return (
         <>
-          <path d="M40 146 L42 212" stroke={hair} strokeWidth="5" />
+          <polygon points="80,62 92,48 104,64 116,44 128,64 144,50 152,68" fill={palette.accent} />
+          <path d="M42 146 L42 212" stroke={palette.hair} strokeWidth="5" />
           <polygon points="42,146 70,152 42,168" fill="#f8fafc" stroke="#d1d5db" strokeWidth="2" />
         </>
       );
-    case 'name-tag':
-      return <rect x="130" y="126" width="26" height="18" rx="4" fill={accentSoft} />;
     case 'dialog-box':
       return (
         <>
-          <rect x="164" y="60" width="42" height="24" rx="8" fill="#ffffff" stroke="#cbd5e1" strokeWidth="2" />
+          <rect x="134" y="126" width="28" height="18" rx="4" fill={palette.accentSoft} />
+          <rect x="164" y="60" width="44" height="24" rx="8" fill="#ffffff" stroke="#cbd5e1" strokeWidth="2" />
           <polygon points="170,84 178,84 174,92" fill="#ffffff" stroke="#cbd5e1" strokeWidth="2" />
-          <text x="173" y="76" fontSize="12" fill="#94a3b8">...</text>
+          <circle cx="176" cy="72" r="2.4" fill="#94a3b8" />
+          <circle cx="184" cy="72" r="2.4" fill="#94a3b8" />
+          <circle cx="192" cy="72" r="2.4" fill="#94a3b8" />
         </>
       );
     case 'signal':
       return (
         <>
-          <path d="M162 60 Q178 42 194 60" stroke={accent} strokeWidth="4" fill="none" strokeLinecap="round" />
-          <path d="M170 74 Q178 64 186 74" stroke={accent} strokeWidth="4" fill="none" strokeLinecap="round" />
-          <circle cx="178" cy="84" r="4" fill={accent} />
+          <path d="M166 60 Q182 42 198 60" stroke={palette.accent} strokeWidth="4" fill="none" strokeLinecap="round" />
+          <path d="M174 74 Q182 64 190 74" stroke={palette.accent} strokeWidth="4" fill="none" strokeLinecap="round" />
+          <circle cx="182" cy="84" r="4" fill={palette.accent} />
+          <path d="M198 112 A18 18 0 1 1 186 92" stroke="#cbd5e1" strokeWidth="6" fill="none" strokeLinecap="round" />
         </>
       );
-    case 'loading-ring':
-      return <path d="M194 112 A18 18 0 1 1 182 92" stroke="#cbd5e1" strokeWidth="6" fill="none" strokeLinecap="round" />;
-    case 'leaf-staff':
+    case 'heal-staff':
       return (
         <>
-          <path d="M54 92 L46 196" stroke={hair} strokeWidth="6" strokeLinecap="round" />
-          <polygon points="34,86 48,56 70,82 50,96" fill={accent} />
-        </>
-      );
-    case 'bandage-heart':
-      return (
-        <>
+          <path d="M54 92 L46 196" stroke={palette.hair} strokeWidth="6" strokeLinecap="round" />
+          <polygon points="34,86 48,56 70,82 50,96" fill={palette.accent} />
           <circle cx="182" cy="132" r="12" fill="#ef7b96" />
           <circle cx="194" cy="132" r="12" fill="#ef7b96" />
           <polygon points="170,138 206,138 188,160" fill="#ef7b96" />
           <rect x="180" y="132" width="16" height="6" rx="3" fill="#f8f0c0" />
         </>
       );
-    case 'spark':
-      return <polygon points="166,60 174,46 182,60 198,68 182,76 174,92 166,76 150,68" fill={accent} />;
     case 'firework':
       return (
         <>
+          <polygon points="166,60 174,46 182,60 198,68 182,76 174,92 166,76 150,68" fill={palette.accent} />
           <path d="M190 42 L198 20" stroke="#ffb703" strokeWidth="4" strokeLinecap="round" />
           <path d="M198 42 L214 28" stroke="#ff7b7b" strokeWidth="4" strokeLinecap="round" />
           <path d="M202 56 L222 58" stroke="#8ddf50" strokeWidth="4" strokeLinecap="round" />
-        </>
-      );
-    case 'walking-stick':
-      return <path d="M168 88 L180 208" stroke={hair} strokeWidth="8" strokeLinecap="round" />;
-    case 'speed-dust':
-      return (
-        <>
-          <ellipse cx="68" cy="202" rx="14" ry="6" fill="#d7dbde" />
-          <ellipse cx="50" cy="206" rx="10" ry="5" fill="#d7dbde" />
-        </>
-      );
-    case 'messy-hair':
-      return (
-        <>
-          <polygon points="78,60 86,42 96,60" fill={hair} />
-          <polygon points="92,56 106,34 118,58" fill={hair} />
-          <polygon points="116,58 132,38 146,62" fill={hair} />
-        </>
-      );
-    case 'self-arrow':
-      return (
-        <>
-          <path d="M52 94 Q74 84 88 94" stroke="#ff7b7b" strokeWidth="5" fill="none" strokeLinecap="round" />
-          <polygon points="82,84 94,96 76,98" fill="#ff7b7b" />
         </>
       );
     default:
@@ -609,99 +608,196 @@ const Accessory = ({ name, recipe }: { name: string; recipe: CharacterRecipe }) 
   }
 };
 
-const BaseBody = ({ recipe }: { recipe: CharacterRecipe }) => {
-  const pose = poseMap[recipe.pose];
-  const { palette } = recipe;
+const DeadRenderer = ({ recipe }: { recipe: (typeof characterRecipes)[keyof typeof characterRecipes] }) => (
+  <>
+    <polygon points="42,104 120,48 194,102 184,186 112,232 38,178" fill="#28302d" />
+    <polygon points="56,112 120,68 176,104 168,176 112,214 56,170" fill="#474f4a" />
+    <polygon points="70,120 120,88 158,114 152,172 112,198 70,168" fill={recipe.palette.accentSoft} />
+    <g transform="rotate(-4 118 138)">
+      <polygon points="84,120 116,104 148,120 140,164 92,164" fill={recipe.palette.outfit} />
+      <polygon points="116,104 146,118 140,164 118,164" fill={recipe.palette.outfitShadow} />
+      <polygon points="88,92 102,72 138,72 148,98 140,128 94,128" fill={recipe.palette.skin} />
+      <polygon points="118,72 146,82 140,128 116,122" fill={recipe.palette.skinShadow} opacity="0.9" />
+      <polygon points="84,88 94,72 140,72 150,92 92,94" fill={recipe.palette.hair} />
+      <path d="M96 102 L108 98" stroke={ink} strokeWidth="4" strokeLinecap="round" />
+      <path d="M124 98 L136 102" stroke={ink} strokeWidth="4" strokeLinecap="round" />
+      <path d="M104 116 L130 116" stroke={ink} strokeWidth="4" strokeLinecap="round" />
+      <polygon points="92,138 114,132 122,148 102,154" fill={recipe.palette.skin} />
+      <polygon points="118,132 142,138 136,152 118,148" fill={recipe.palette.skinShadow} />
+    </g>
+  </>
+);
+
+const ZzzzRenderer = ({ recipe }: { recipe: (typeof characterRecipes)[keyof typeof characterRecipes] }) => (
+  <>
+    <polygon points="42,154 108,94 194,108 180,194 90,210" fill="#75ad60" />
+    <polygon points="50,156 110,102 178,116 168,184 92,198" fill={recipe.palette.accentSoft} />
+    <polygon points="86,138 118,112 154,118 146,154 98,160" fill={recipe.palette.skin} />
+    <polygon points="118,112 154,118 148,154 120,152" fill={recipe.palette.skinShadow} opacity="0.8" />
+    <polygon points="84,132 98,120 146,122 156,134 100,138" fill={recipe.palette.hair} />
+    <path d="M98 134 L110 130" stroke={ink} strokeWidth="4" strokeLinecap="round" />
+    <path d="M124 130 L136 134" stroke={ink} strokeWidth="4" strokeLinecap="round" />
+    <path d="M106 148 L128 148" stroke={ink} strokeWidth="4" strokeLinecap="round" />
+    <path d="M162 118 L148 184" stroke="#f7faf7" strokeWidth="5" strokeLinecap="round" />
+    <circle cx="162" cy="118" r="5" fill="#f7faf7" />
+    <Zig x={172} y={102} size={10} />
+    <Zig x={188} y={82} size={14} />
+  </>
+);
+
+const FakeRenderer = ({ recipe, scene }: { recipe: (typeof characterRecipes)[keyof typeof characterRecipes]; scene: Scene }) => (
+  <>
+    <rect x="72" y="54" width="92" height="150" rx="24" fill="#f7faf8" />
+    <rect x="84" y="66" width="68" height="126" rx="20" fill="#ecf2ef" />
+    <g transform="rotate(-2 118 126)">
+      <Torso palette={recipe.palette} scene={scene} />
+      <polygon points="86,84 102,58 142,58 154,88 146,124 92,124" fill="#eef3f1" />
+      <polygon points="120,58 146,68 142,124 118,118" fill="#d8e0dd" />
+      <polygon points="82,76 104,52 144,56 154,84 146,98 92,98" fill="#ffffff" />
+      <path d="M90 92 L148 92" stroke="#c5d1cd" strokeWidth="3" />
+      <path d="M100 88 L110 88" stroke={ink} strokeWidth="4" strokeLinecap="round" />
+      <path d="M128 88 L138 88" stroke={ink} strokeWidth="4" strokeLinecap="round" />
+      <path d="M102 112 Q120 120 138 108" stroke={ink} strokeWidth="4" fill="none" strokeLinecap="round" />
+      <rect x="100" y="126" width="36" height="8" rx="4" fill="#d7e0dc" />
+    </g>
+  </>
+);
+
+const FuckRenderer = ({ recipe }: { recipe: (typeof characterRecipes)[keyof typeof characterRecipes] }) => (
+  <>
+    <g transform="rotate(-12 120 126)">
+      <Torso palette={recipe.palette} scene={{ body: 'march', emotion: 'angry', prop: 'weed-eruption', head: 'grass' }} />
+      <Head palette={recipe.palette} scene={{ body: 'march', emotion: 'angry', prop: 'weed-eruption', head: 'grass' }} />
+    </g>
+    <path d="M146 142 Q188 126 210 92" stroke={recipe.palette.accent} strokeWidth="12" fill="none" strokeLinecap="round" />
+    <polygon points="188,94 206,70 214,104" fill={recipe.palette.accentSoft} />
+    <polygon points="150,88 174,58 182,96" fill={recipe.palette.accent} />
+    <polygon points="166,72 194,34 198,82" fill={recipe.palette.accent} />
+    <polygon points="178,88 208,60 212,96" fill={recipe.palette.accent} />
+  </>
+);
+
+const ShitRenderer = ({ recipe }: { recipe: (typeof characterRecipes)[keyof typeof characterRecipes] }) => (
+  <>
+    <g transform="rotate(8 120 126)">
+      <Torso palette={recipe.palette} scene={{ body: 'stumble', emotion: 'dizzy', prop: 'bad-luck', head: 'poop' }} />
+      <Head palette={recipe.palette} scene={{ body: 'stumble', emotion: 'dizzy', prop: 'bad-luck', head: 'poop' }} />
+      <polygon points="138,136 154,132 156,146 142,150" fill={recipe.palette.skinShadow} />
+    </g>
+    <path d="M170 154 Q188 134 180 114 Q194 110 186 98 Q166 104 160 126 Q156 148 170 154" fill="#8f6a48" />
+    <path d="M186 108 L204 96" stroke="#9aa6b2" strokeWidth="3" strokeLinecap="round" />
+    <circle cx="206" cy="96" r="5" fill="#9aa6b2" />
+    <path d="M54 200 Q76 190 92 204" stroke="#cbd5e1" strokeWidth="5" strokeLinecap="round" fill="none" />
+  </>
+);
+
+const AtmerRenderer = ({ recipe }: { recipe: (typeof characterRecipes)[keyof typeof characterRecipes] }) => (
+  <>
+    <g transform="rotate(-6 120 126)">
+      <Torso palette={recipe.palette} scene={{ body: 'offer', emotion: 'sad', prop: 'resource-drain', head: 'soft' }} />
+      <Head palette={recipe.palette} scene={{ body: 'offer', emotion: 'sad', prop: 'resource-drain', head: 'soft' }} />
+    </g>
+    <polygon points="134,118 202,108 208,140 142,150" fill="#7ab55f" />
+    <circle cx="178" cy="82" r="9" fill="#f1d36a" />
+    <circle cx="194" cy="94" r="7" fill="#f1d36a" />
+    <path d="M146 150 Q174 166 206 168" stroke="#ef7b96" strokeWidth="5" fill="none" strokeLinecap="round" />
+    <path d="M160 156 L170 148 L170 162 Z" fill="#ef7b96" />
+    <polygon points="152,94 164,88 164,100 152,104" fill="#f5f0d8" />
+    <polygon points="84,188 112,184 108,198 80,202" fill="#d4c4a1" />
+  </>
+);
+
+const ThankRenderer = ({ recipe }: { recipe: (typeof characterRecipes)[keyof typeof characterRecipes] }) => (
+  <>
+    <g transform="rotate(-2 120 126)">
+      <Torso palette={recipe.palette} scene={{ body: 'offer', emotion: 'cry', prop: 'prayer', head: 'soft' }} />
+      <Head palette={recipe.palette} scene={{ body: 'offer', emotion: 'cry', prop: 'prayer', head: 'soft' }} />
+    </g>
+    <polygon points="108,152 120,126 132,154 120,184" fill={recipe.palette.skin} />
+    <polygon points="120,152 134,126 148,154 134,184" fill={recipe.palette.skinShadow} />
+    <path d="M98 92 Q82 126 86 168" stroke="#79c9ff" strokeWidth="10" strokeLinecap="round" fill="none" />
+    <path d="M138 90 Q154 124 150 168" stroke="#79c9ff" strokeWidth="10" strokeLinecap="round" fill="none" />
+  </>
+);
+
+const LoverRenderer = ({ recipe }: { recipe: (typeof characterRecipes)[keyof typeof characterRecipes] }) => (
+  <>
+    <g transform="rotate(-10 120 126)">
+      <Torso palette={recipe.palette} scene={{ body: 'strut', emotion: 'greedy', prop: 'bouquet', head: 'soft' }} />
+      <Head palette={recipe.palette} scene={{ body: 'strut', emotion: 'greedy', prop: 'bouquet', head: 'soft' }} />
+    </g>
+    <circle cx="100" cy="86" r="12" fill={recipe.palette.accent} />
+    <circle cx="112" cy="84" r="12" fill={recipe.palette.accent} />
+    <polygon points="92,92 120,92 106,108" fill={recipe.palette.accent} />
+    <circle cx="132" cy="86" r="12" fill={recipe.palette.accent} />
+    <circle cx="144" cy="84" r="12" fill={recipe.palette.accent} />
+    <polygon points="124,92 152,92 138,108" fill={recipe.palette.accent} />
+    <polygon points="166,138 192,126 182,164" fill="#7cc26b" />
+    <circle cx="178" cy="120" r="8" fill="#ef7b96" />
+    <circle cx="190" cy="128" r="8" fill="#ffcc66" />
+    <circle cx="170" cy="130" r="8" fill="#ef7b96" />
+  </>
+);
+
+const NpcRenderer = ({ recipe, scene }: { recipe: (typeof characterRecipes)[keyof typeof characterRecipes]; scene: Scene }) => (
+  <>
+    <g transform="rotate(3 120 126)">
+      <Torso palette={recipe.palette} scene={scene} />
+      <Head palette={recipe.palette} scene={scene} />
+    </g>
+    <rect x="136" y="126" width="28" height="18" rx="4" fill={recipe.palette.accentSoft} />
+    <rect x="164" y="60" width="44" height="24" rx="8" fill="#ffffff" stroke="#cbd5e1" strokeWidth="2" />
+    <polygon points="170,84 178,84 174,92" fill="#ffffff" stroke="#cbd5e1" strokeWidth="2" />
+    <circle cx="176" cy="72" r="2.4" fill="#94a3b8" />
+    <circle cx="184" cy="72" r="2.4" fill="#94a3b8" />
+    <circle cx="192" cy="72" r="2.4" fill="#94a3b8" />
+    <rect x="88" y="92" width="58" height="8" rx="4" fill="#eef2f4" opacity="0.8" />
+  </>
+);
+
+const WifiRenderer = ({ recipe, scene }: { recipe: (typeof characterRecipes)[keyof typeof characterRecipes]; scene: Scene }) => (
+  <>
+    <g transform="rotate(14 120 126)">
+      <Torso palette={recipe.palette} scene={scene} />
+      <Head palette={recipe.palette} scene={scene} />
+    </g>
+    <path d="M166 60 Q182 42 198 60" stroke={recipe.palette.accent} strokeWidth="4" fill="none" strokeLinecap="round" />
+    <path d="M174 74 Q182 64 190 74" stroke={recipe.palette.accent} strokeWidth="4" fill="none" strokeLinecap="round" />
+    <circle cx="182" cy="84" r="4" fill={recipe.palette.accent} />
+    <path d="M198 112 A18 18 0 1 1 186 92" stroke="#cbd5e1" strokeWidth="6" fill="none" strokeLinecap="round" />
+    <path d="M56 118 L70 110" stroke="#cbd5e1" strokeWidth="5" strokeLinecap="round" />
+    <path d="M48 136 L66 132" stroke="#cbd5e1" strokeWidth="5" strokeLinecap="round" />
+  </>
+);
+const specialRenderers: Partial<Record<string, (props: { recipe: (typeof characterRecipes)[keyof typeof characterRecipes]; scene: Scene }) => JSX.Element>> = {
+  DEAD: DeadRenderer,
+  ZZZZ: ZzzzRenderer,
+  FAKE: FakeRenderer,
+  FUCK: FuckRenderer,
+  SHIT: ShitRenderer,
+  'ATM-er': AtmerRenderer,
+  'THAN-K': ThankRenderer,
+  'LOVE-R': LoverRenderer,
+  NPC: NpcRenderer,
+  WIFI: WifiRenderer,
+};
+
+const CharacterScene = ({ recipe, code, scene }: { recipe: (typeof characterRecipes)[keyof typeof characterRecipes]; code: string; scene: Scene }) => {
+  const SpecialRenderer = specialRenderers[code];
+  if (SpecialRenderer) {
+    return <SpecialRenderer recipe={recipe} scene={scene} />;
+  }
 
   return (
     <>
-      <polygon points={pose.leftArm} fill={palette.skin} />
-      <polygon points={pose.rightArm} fill={palette.skinShadow} />
-      <polygon points={pose.leftLeg} fill={palette.outfitShadow} />
-      <polygon points={pose.rightLeg} fill={palette.outfit} />
-      <polygon points={pose.body} fill={palette.outfit} />
-      <polygon points={pose.head} fill={palette.skin} />
-      <polygon points="120,36 156,58 146,92 120,84" fill={palette.skinShadow} opacity="0.85" />
-      <polygon points="82,66 96,48 116,62 126,56 148,60 158,78 82,78" fill={palette.hair} />
-      <polygon points="120,60 156,76 148,86 120,80" fill={palette.hairShadow} />
-      {pose.belly ? <polygon points={pose.belly} fill={palette.outfitShadow} /> : null}
-      <Face expression={recipe.expression} />
-      {recipe.accessories.map((accessory) => (
-        <Accessory key={accessory} name={accessory} recipe={recipe} />
-      ))}
+      <g transform={`rotate(${scene.tilt ?? 0} 120 126)`}>
+        <Torso palette={recipe.palette} scene={scene} />
+        <Head palette={recipe.palette} scene={scene} />
+      </g>
+      <PropLayer scene={scene} palette={recipe.palette} />
     </>
   );
 };
-
-const DeadRenderer = ({ recipe }: { recipe: CharacterRecipe }) => (
-  <g>
-    <polygon points="46,104 120,54 186,102 182,170 114,214 42,166" fill="#2d3433" />
-    <polygon points="60,110 120,70 170,106 166,160 114,196 58,160" fill="#454d4a" />
-    <polygon points="74,118 118,90 154,114 148,164 110,188 74,160" fill={recipe.palette.accentSoft} />
-    <polygon points="84,104 118,86 148,102 142,138 94,140" fill={recipe.palette.skin} />
-    <path d="M96 114 L104 110" stroke={faceInk} strokeWidth="4" strokeLinecap="round" />
-    <path d="M122 110 L130 114" stroke={faceInk} strokeWidth="4" strokeLinecap="round" />
-    <path d="M102 126 L126 126" stroke={faceInk} strokeWidth="4" strokeLinecap="round" />
-    <polygon points="88,142 116,132 144,142 136,170 98,170" fill={recipe.palette.outfit} />
-  </g>
-);
-
-const ZzzzRenderer = ({ recipe }: { recipe: CharacterRecipe }) => (
-  <g>
-    <polygon points="44,148 102,100 190,112 174,186 88,206" fill="#7db86b" />
-    <polygon points="50,150 104,108 176,118 164,180 90,198" fill={recipe.palette.accentSoft} />
-    <polygon points="86,136 116,114 152,122 144,154 98,160" fill={recipe.palette.skin} />
-    <path d="M98 130 L106 126" stroke={faceInk} strokeWidth="4" strokeLinecap="round" />
-    <path d="M120 126 L128 130" stroke={faceInk} strokeWidth="4" strokeLinecap="round" />
-    <path d="M106 146 L126 146" stroke={faceInk} strokeWidth="4" strokeLinecap="round" />
-    <text x="172" y="96" fontSize="20" fontFamily="Space Grotesk" fill="#6b7280">Z</text>
-    <text x="190" y="74" fontSize="30" fontFamily="Space Grotesk" fill="#6b7280">Z</text>
-  </g>
-);
-
-const FakeRenderer = ({ recipe }: { recipe: CharacterRecipe }) => (
-  <g>
-    <BaseBody recipe={recipe} />
-    <polygon points="120,60 156,58 148,112 120,112" fill="#f8fafc" opacity="0.92" />
-    <path d="M130 80 Q138 70 144 80" stroke={faceInk} strokeWidth="3" fill="none" strokeLinecap="round" />
-    <path d="M128 100 Q138 112 146 98" stroke={faceInk} strokeWidth="3" fill="none" strokeLinecap="round" />
-  </g>
-);
-
-const AtmerRenderer = ({ recipe }: { recipe: CharacterRecipe }) => (
-  <g>
-    <BaseBody recipe={recipe} />
-    <polygon points="126,122 210,108 214,146 132,160" fill="#73b45c" />
-    <rect x="146" y="118" width="22" height="6" fill="#d9edc8" />
-    <circle cx="186" cy="80" r="8" fill="#f2d36c" />
-    <circle cx="202" cy="92" r="7" fill="#f2d36c" />
-  </g>
-);
-
-const LoverRenderer = ({ recipe }: { recipe: CharacterRecipe }) => (
-  <g>
-    <BaseBody recipe={recipe} />
-    <polygon points="164,132 186,122 178,156" fill="#7cc26b" />
-    <circle cx="180" cy="118" r="8" fill="#ef7b96" />
-    <circle cx="192" cy="126" r="8" fill="#ffcc66" />
-  </g>
-);
-
-const ThankRenderer = ({ recipe }: { recipe: CharacterRecipe }) => (
-  <g>
-    <BaseBody recipe={recipe} />
-    <path d="M92 94 Q78 126 84 166" stroke="#76c7ff" strokeWidth="12" strokeLinecap="round" fill="none" />
-    <path d="M132 94 Q146 126 140 166" stroke="#76c7ff" strokeWidth="12" strokeLinecap="round" fill="none" />
-  </g>
-);
-
-const FuckRenderer = ({ recipe }: { recipe: CharacterRecipe }) => (
-  <g>
-    <BaseBody recipe={recipe} />
-    <path d="M164 136 Q196 128 214 104" stroke={recipe.palette.accent} strokeWidth="10" fill="none" strokeLinecap="round" />
-    <polygon points="198,102 214,82 220,108" fill={recipe.palette.accentSoft} />
-  </g>
-);
 
 export const CharacterArt = ({ recipeKey, code, className, size = 220, floating = false }: CharacterArtProps) => {
   const recipe = characterRecipes[recipeKey];
@@ -749,47 +845,30 @@ export const CharacterArt = ({ recipeKey, code, className, size = 220, floating 
     );
   }
 
-  const renderer = (() => {
-    switch (recipe.overrideRenderer) {
-      case 'dead':
-        return <DeadRenderer recipe={recipe} />;
-      case 'zzzz':
-        return <ZzzzRenderer recipe={recipe} />;
-      case 'fake':
-        return <FakeRenderer recipe={recipe} />;
-      case 'atmer':
-        return <AtmerRenderer recipe={recipe} />;
-      case 'lover':
-        return <LoverRenderer recipe={recipe} />;
-      case 'thank':
-        return <ThankRenderer recipe={recipe} />;
-      case 'fuck':
-        return <FuckRenderer recipe={recipe} />;
-      default:
-        return <BaseBody recipe={recipe} />;
-    }
-  })();
+  const scene = sceneMap[code] ?? { body: 'offer', emotion: recipe.expression, prop: 'dialog-box', head: 'default' };
 
   return (
     <div className={className} aria-label={`${code} visual`}>
-      <svg
-        viewBox={baseViewBox}
-        width={size}
-        height={size}
-        className={floating ? 'animate-drift' : undefined}
-        role="img"
-      >
+      <svg viewBox={baseViewBox} width={size} height={size} className={floating ? 'animate-drift' : undefined} role="img">
         <defs>
           <filter id={`shadow-${recipeKey}`} x="-20%" y="-20%" width="160%" height="160%">
             <feDropShadow dx="0" dy="12" stdDeviation="8" floodColor="rgba(20,48,37,0.18)" />
           </filter>
         </defs>
         <g filter={`url(#shadow-${recipeKey})`}>
-          {renderer}
+          <CharacterScene recipe={recipe} code={code} scene={scene} />
         </g>
       </svg>
     </div>
   );
 };
+
+
+
+
+
+
+
+
 
 
