@@ -45,7 +45,7 @@ export const HomePage = () => {
             </p>
             <div className="grid gap-4 sm:grid-cols-3">
               <div className="rounded-[28px] bg-slate-50 p-5">
-                <div className="font-display text-3xl font-bold text-slate-900">29</div>
+                <div className="font-display text-3xl font-bold text-slate-900">31</div>
                 <div className="mt-2 text-sm leading-6 text-slate-500">首发人格原型，覆盖多种常见精神状态流派。</div>
               </div>
               <div className="rounded-[28px] bg-slate-50 p-5">
@@ -123,5 +123,6 @@ export const HomePage = () => {
     </div>
   );
 };
+
 
 

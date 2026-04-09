@@ -50,7 +50,7 @@ export const QuizPage = () => {
           </div>
           <h1 className="mt-8 font-display text-4xl font-bold text-slate-900">正在解析你的精神状态图谱</h1>
           <p className="mt-4 text-base leading-7 text-slate-500">
-            系统正在对照 29 种人格原型、6 组维度和你的作答强度，生成最像你的那张精神剖面卡。
+            系统正在对照 31 种人格原型、6 组维度和你的作答强度，生成最像你的那张精神剖面卡。
           </p>
           <div className="mt-8 h-3 overflow-hidden rounded-full bg-slate-200">
             <div className="h-full w-3/4 animate-pulse rounded-full bg-accent" />
@@ -134,3 +134,4 @@ export const QuizPage = () => {
     </div>
   );
 };
+

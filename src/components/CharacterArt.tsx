@@ -65,6 +65,8 @@ const sceneMap: Record<string, Scene> = {
   NPC: { body: 'offer', emotion: 'blank', prop: 'dialog-box', head: 'default' },
   WIFI: { body: 'stumble', emotion: 'dizzy', prop: 'signal', head: 'default' },
   HEAL: { body: 'offer', emotion: 'soft', prop: 'heal-staff', head: 'soft', tilt: -4 },
+  'CA$H': { body: 'offer', emotion: 'greedy', prop: 'resource-drain', head: 'sharp', tilt: -6 },
+  'SO-WHAT': { body: 'curl', emotion: 'blank', prop: 'shrug-cloud', head: 'hood', tilt: 4 },
   YOLO: { body: 'strut', emotion: 'manic', prop: 'firework', head: 'burst', tilt: -10 },
 };
 
@@ -862,13 +864,4 @@ export const CharacterArt = ({ recipeKey, code, className, size = 220, floating 
     </div>
   );
 };
-
-
-
-
-
-
-
-
-
 

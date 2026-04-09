@@ -168,4 +168,7 @@ export const characterRecipes: Record<string, CharacterRecipe> = {
   wifi: { skeleton: 'biped', pose: 'panic', palette: palettes.aqua, accessories: ['signal', 'loading-ring'], expression: 'dizzy' },
   heal: { skeleton: 'biped', pose: 'offer', palette: palettes.moss, accessories: ['leaf-staff', 'bandage-heart'], expression: 'soft' },
   yolo: { skeleton: 'biped', pose: 'strut', palette: palettes.plum, accessories: ['spark', 'firework'], expression: 'manic' },
+  cash: { skeleton: 'prop-heavy', pose: 'offer', palette: palettes.gold, accessories: ['cash', 'coin-rain'], expression: 'greedy' },
+  sowhat: { skeleton: 'biped', pose: 'lounge', palette: palettes.monochrome, accessories: ['shrug-cloud', 'dialog-box'], expression: 'blank' },
 };
+

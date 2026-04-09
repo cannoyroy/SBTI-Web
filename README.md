@@ -23,7 +23,7 @@ It focuses on:
 
 - 36-question quiz with 7-level answer scale
 - 6 mental-state dimensions with dual-sided visual bars
-- 29 launch personalities
+- 31 launch personalities
 - data-driven personality definitions and visual recipes
 - personality atlas page
 - personality detail page
@@ -83,4 +83,5 @@ Recommended Vercel settings:
 
 - `reference_materials/` is intentionally ignored by Git.
 - This project is for entertainment and product exploration, not psychological diagnosis.
+
 

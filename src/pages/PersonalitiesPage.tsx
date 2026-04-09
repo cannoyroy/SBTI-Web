@@ -40,7 +40,7 @@ export const PersonalitiesPage = () => {
           <div>
             <p className="pill">人格图鉴</p>
             <h1 className="mt-4 font-display text-5xl font-bold tracking-[-0.05em] text-slate-900 md:text-6xl">
-              29 种精神状态人格，
+              31 种精神状态人格，
               <br />
               已按流派归档。
             </h1>
@@ -86,3 +86,4 @@ export const PersonalitiesPage = () => {
     </div>
   );
 };
+
