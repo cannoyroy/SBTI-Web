@@ -4,10 +4,22 @@ import { TraitBar } from '../components/TraitBar';
 import { factionMeta, traitAxes } from '../lib/constants';
 import { personalityMap } from '../lib/personalities';
 
+const safeDecodeRouteParam = (value?: string) => {
+  if (!value) {
+    return null;
+  }
+
+  try {
+    return decodeURIComponent(value);
+  } catch {
+    return null;
+  }
+};
+
 export const PersonalityDetailPage = () => {
   const params = useParams();
-  const code = decodeURIComponent(params.code ?? '');
-  const personality = personalityMap[code];
+  const code = safeDecodeRouteParam(params.code);
+  const personality = code ? personalityMap[code] : null;
 
   if (!personality) {
     return <Navigate to="/personalities" replace />;

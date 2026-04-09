@@ -84,16 +84,16 @@ export const ResultPage = () => {
   };
 
   return (
-    <div className="mx-auto max-w-7xl px-4 py-10 sm:px-6 lg:px-8 lg:py-14">
+    <div className="mx-auto max-w-7xl overflow-x-hidden px-4 py-10 sm:px-6 lg:px-8 lg:py-14">
       <section className="soft-card overflow-hidden p-6 sm:p-8 lg:p-10">
         <div className="grid gap-10 lg:grid-cols-[1.05fr_0.95fr] lg:items-center">
-          <div className="space-y-6">
+          <div className="space-y-6 min-w-0">
             <span className="pill" style={{ color: faction.color, borderColor: `${faction.color}22`, backgroundColor: `${faction.color}12` }}>
               {faction.label}
             </span>
             <div>
               <p className="text-sm font-semibold uppercase tracking-[0.24em] text-slate-400">你的人格类型是</p>
-              <h1 className="mt-3 font-display text-5xl font-bold tracking-[-0.06em] text-slate-900 md:text-7xl">{primary.code}</h1>
+              <h1 className="mt-3 break-words font-display text-5xl font-bold tracking-[-0.06em] text-slate-900 md:text-7xl">{primary.code}</h1>
               <p className="mt-3 text-2xl font-semibold text-slate-600">{primary.nameZh}</p>
             </div>
             <p className="max-w-2xl text-lg leading-8 text-slate-500">{primary.summary}</p>
@@ -132,9 +132,9 @@ export const ResultPage = () => {
               </div>
             </div>
           </div>
-          <div className="relative rounded-[36px] bg-gradient-to-br from-white via-slate-50 to-emerald-50 p-8">
+          <div className="relative min-w-0 rounded-[36px] bg-gradient-to-br from-white via-slate-50 to-emerald-50 p-8">
             <div className="absolute inset-6 rounded-[28px] border border-white/70 bg-white/70" />
-            <div className="relative flex items-center justify-center">
+            <div className="relative flex items-center justify-center overflow-hidden">
               <CharacterArt recipeKey={primary.recipeKey} code={primary.code} size={320} floating />
             </div>
           </div>
@@ -142,8 +142,8 @@ export const ResultPage = () => {
       </section>
 
       <section className="grid gap-6 py-10 lg:grid-cols-[1.1fr_0.9fr] lg:py-12">
-        <div className="space-y-5">
-          <div className="flex items-center justify-between">
+        <div className="min-w-0 space-y-5">
+          <div className="flex items-center justify-between gap-4">
             <h2 className="section-title">你的 6 维精神状态</h2>
             <span className="text-sm font-semibold text-slate-400">MBTI 风格双向条形图</span>
           </div>
@@ -156,27 +156,29 @@ export const ResultPage = () => {
             </div>
           ))}
         </div>
-        <div className="space-y-5">
-          <div className="flex items-center justify-between">
+        <div className="min-w-0 space-y-5">
+          <div className="flex items-center justify-between gap-4">
             <h2 className="section-title">Top 3 相近人格</h2>
-            <Link to="/personalities" className="text-sm font-semibold text-accent">查看图鉴</Link>
+            <Link to="/personalities" className="shrink-0 text-sm font-semibold text-accent">查看图鉴</Link>
           </div>
           {rankedMatches.map((match) => (
-            <div key={match.code} className="soft-card p-5">
-              <div className="flex items-center gap-4">
-                <CharacterArt recipeKey={match.personality.recipeKey} code={match.personality.code} size={108} />
+            <div key={match.code} className="soft-card min-w-0 overflow-hidden p-5">
+              <div className="flex min-w-0 flex-col gap-4 sm:flex-row sm:items-center">
+                <div className="shrink-0 self-center sm:self-auto">
+                  <CharacterArt recipeKey={match.personality.recipeKey} code={match.personality.code} size={108} />
+                </div>
                 <div className="min-w-0 flex-1">
-                  <div className="flex items-center justify-between gap-3">
-                    <div>
-                      <div className="font-display text-2xl font-bold text-slate-900">{match.personality.code}</div>
+                  <div className="flex min-w-0 flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                    <div className="min-w-0">
+                      <div className="break-words font-display text-2xl font-bold text-slate-900">{match.personality.code}</div>
                       <div className="text-sm text-slate-500">{match.personality.nameZh}</div>
                     </div>
-                    <div className="text-right">
+                    <div className="shrink-0 text-left sm:text-right">
                       <div className="font-display text-2xl font-bold text-slate-900">{match.percent.toFixed(2)}%</div>
                       <div className="text-xs uppercase tracking-[0.2em] text-slate-400">相似度</div>
                     </div>
                   </div>
-                  <p className="mt-3 text-sm leading-6 text-slate-500">{match.personality.tagline}</p>
+                  <p className="mt-3 break-words text-sm leading-6 text-slate-500">{match.personality.tagline}</p>
                 </div>
               </div>
             </div>
@@ -225,20 +227,20 @@ export const ResultPage = () => {
       </section>
 
       <section className="grid gap-6 py-10 lg:grid-cols-[1.05fr_0.95fr]">
-        <div className="space-y-6">
-          <div className="flex items-center justify-between">
+        <div className="min-w-0 space-y-6">
+          <div className="flex items-center justify-between gap-4">
             <h2 className="section-title">分享卡片</h2>
             <div className="text-sm text-slate-400">用于下载和转发的结果图</div>
           </div>
           <div ref={shareRef} id="share-card" className="overflow-hidden rounded-[36px] border border-white/80 bg-[#f5f7f2] p-8 shadow-cloud">
             <div className="rounded-[28px] bg-white p-6">
               <div className="flex items-start justify-between gap-4">
-                <div>
+                <div className="min-w-0">
                   <p className="text-sm font-semibold uppercase tracking-[0.2em] text-slate-400">SBTI Result</p>
-                  <h3 className="mt-3 font-display text-5xl font-bold text-slate-900">{primary.code}</h3>
+                  <h3 className="mt-3 break-words font-display text-5xl font-bold text-slate-900">{primary.code}</h3>
                   <p className="mt-2 text-xl font-semibold text-slate-600">{primary.nameZh}</p>
                 </div>
-                <div className="rounded-full bg-slate-100 px-4 py-2 text-sm font-semibold text-slate-500">{result.confidence.toFixed(2)}% Match</div>
+                <div className="shrink-0 rounded-full bg-slate-100 px-4 py-2 text-sm font-semibold text-slate-500">{result.confidence.toFixed(2)}% Match</div>
               </div>
               <div className="mt-6 grid items-center gap-6 md:grid-cols-[0.85fr_1.15fr]">
                 <div className="rounded-[28px] bg-slate-50 p-4">
@@ -266,10 +268,10 @@ export const ResultPage = () => {
             </div>
           </div>
         </div>
-        <div className="space-y-5">
-          <div className="flex items-center justify-between">
+        <div className="min-w-0 space-y-5 overflow-hidden">
+          <div className="flex items-center justify-between gap-4">
             <h2 className="section-title">继续看看别的人格</h2>
-            <Link to="/personalities" className="text-sm font-semibold text-accent">全部展开</Link>
+            <Link to="/personalities" className="shrink-0 text-sm font-semibold text-accent">全部展开</Link>
           </div>
           {rankedMatches.slice(1).map((match) => (
             <PersonalityCard key={match.code} personality={match.personality} compact />
@@ -279,4 +281,3 @@ export const ResultPage = () => {
     </div>
   );
 };
-
