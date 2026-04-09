@@ -2,6 +2,8 @@
 import { personalities } from './personalities';
 import type { MatchResult } from './types';
 
+const similarityScale = 90;
+
 export const normalizeAxisScore = (average: number) => {
   const normalized = Math.round(((average + 3) / 6) * 100);
   return Math.min(100, Math.max(0, normalized));
@@ -50,19 +52,21 @@ export const rankPersonalities = (traitScores: Record<string, number>) => {
     .sort((left, right) => left.distance - right.distance);
 };
 
+export const distanceToSimilarity = (distance: number) => {
+  const score = 100 * Math.exp(-((distance * distance) / (2 * similarityScale * similarityScale)));
+  return Math.min(100, Math.max(0, Number(score.toFixed(2))));
+};
+
 export const calculateMatch = (answers: Record<string, number>): MatchResult => {
   const traitScores = computeTraitScores(answers);
   const ranked = rankPersonalities(traitScores);
   const [best, second, third] = ranked;
-  const meanDistance = ranked.reduce((sum, item) => sum + item.distance, 0) / ranked.length;
-  const separationBonus = second ? Math.min(20, Math.max(0, (second.distance - best.distance) / 2)) : 12;
-  const closeness = Math.max(52, 100 - (best.distance / Math.max(1, meanDistance)) * 38);
-  const confidence = Math.min(99, Math.max(55, closeness + separationBonus));
+  const confidence = distanceToSimilarity(best.distance);
 
   return {
     primaryCode: best.code,
     top3Codes: [best.code, second?.code, third?.code].filter(Boolean) as string[],
-    confidence: Number(confidence.toFixed(2)),
+    confidence,
     traitScores,
   };
 };

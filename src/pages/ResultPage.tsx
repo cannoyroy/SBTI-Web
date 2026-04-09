@@ -5,13 +5,11 @@ import { CharacterArt } from '../components/CharacterArt';
 import { PersonalityCard } from '../components/PersonalityCard';
 import { TraitBar } from '../components/TraitBar';
 import { factionMeta, traitAxes } from '../lib/constants';
-import { rankPersonalities, traitNarratives } from '../lib/matching';
+import { distanceToSimilarity, rankPersonalities, traitNarratives } from '../lib/matching';
 import { personalityMap } from '../lib/personalities';
 import { useQuiz } from '../state/QuizContext';
 
 const siteUrl = 'https://sbti.untymen.com';
-
-type ShareState = 'idle' | 'working' | 'done' | 'error';
 
 const describeAxis = (axisId: string, score: number) => {
   const axis = traitAxes.find((item) => item.id === axisId);
@@ -33,35 +31,10 @@ const describeAxis = (axisId: string, score: number) => {
   return `你在「${axis.leftLabel} / ${axis.rightLabel}」之间会跟着场景切换。`;
 };
 
-const canvasToBlob = (canvas: HTMLCanvasElement) => {
-  return new Promise<Blob>((resolve, reject) => {
-    canvas.toBlob((blob) => {
-      if (blob) {
-        resolve(blob);
-        return;
-      }
-
-      reject(new Error('Failed to create image blob'));
-    }, 'image/png');
-  });
-};
-
-const downloadBlob = (blob: Blob, filename: string) => {
-  const blobUrl = URL.createObjectURL(blob);
-  const link = document.createElement('a');
-  link.href = blobUrl;
-  link.download = filename;
-  link.rel = 'noopener';
-  document.body.appendChild(link);
-  link.click();
-  link.remove();
-  window.setTimeout(() => URL.revokeObjectURL(blobUrl), 1000);
-};
-
 export const ResultPage = () => {
   const { result, isComplete, resetQuiz } = useQuiz();
   const shareRef = useRef<HTMLDivElement | null>(null);
-  const [shareState, setShareState] = useState<ShareState>('idle');
+  const [shareState, setShareState] = useState<'idle' | 'working' | 'done' | 'error'>('idle');
 
   const rankedMatches = useMemo(() => {
     if (!result) {
@@ -69,15 +42,11 @@ export const ResultPage = () => {
     }
 
     const ranked = rankPersonalities(result.traitScores);
-    const maxDistance = Math.max(...ranked.map((item) => item.distance));
 
     return ranked.slice(0, 3).map((item, index) => ({
       ...item,
       personality: personalityMap[item.code],
-      percent:
-        index === 0
-          ? result.confidence
-          : Math.max(58, Math.min(95, Math.round(100 - (item.distance / Math.max(1, maxDistance)) * 42))),
+      percent: index === 0 ? result.confidence : distanceToSimilarity(item.distance),
     }));
   }, [result]);
 
@@ -98,32 +67,16 @@ export const ResultPage = () => {
       setShareState('working');
       const canvas = await html2canvas(shareRef.current, {
         backgroundColor: '#f5f7f2',
-        scale: Math.min(window.devicePixelRatio || 2, 3),
+        scale: 2,
         useCORS: true,
-        logging: false,
       });
 
-      const blob = await canvasToBlob(canvas);
-      const filename = `SBTI-${primary.code}.png`;
-      const file = new File([blob], filename, { type: 'image/png' });
-      const nav = navigator as Navigator & {
-        canShare?: (data?: ShareData) => boolean;
-      };
-
-      if (nav.share && nav.canShare?.({ files: [file] })) {
-        await nav.share({
-          files: [file],
-          title: `SBTI ${primary.code}`,
-          text: `${primary.code} - ${primary.nameZh}\n${siteUrl}`,
-        });
-        setShareState('done');
-        return;
-      }
-
-      downloadBlob(blob, filename);
+      const link = document.createElement('a');
+      link.href = canvas.toDataURL('image/png');
+      link.download = `SBTI-${primary.code}.png`;
+      link.click();
       setShareState('done');
-    } catch (error) {
-      console.error(error);
+    } catch {
       setShareState('error');
     }
   };
@@ -168,19 +121,13 @@ export const ResultPage = () => {
               </button>
             </div>
             <div className="text-sm text-slate-400">
-              {shareState === 'working'
-                ? '正在生成图片...'
-                : shareState === 'done'
-                  ? '手机端会直接调起系统分享或保存，桌面端会下载 PNG'
-                  : shareState === 'error'
-                    ? '导出失败，请重试'
-                    : '手机端优先调用系统分享，桌面端下载 PNG'}
+              {shareState === 'working' ? '正在生成图片...' : shareState === 'done' ? '图片已导出' : shareState === 'error' ? '导出失败，请重试' : '可下载 PNG'}
             </div>
             <div className="grid gap-4 sm:grid-cols-2">
               <div className="rounded-[28px] bg-slate-50 p-6">
-                <div className="text-sm font-semibold uppercase tracking-[0.2em] text-slate-400">匹配度</div>
+                <div className="text-sm font-semibold uppercase tracking-[0.2em] text-slate-400">接近度</div>
                 <div className="mt-3 font-display text-4xl font-bold text-slate-900">{result.confidence.toFixed(2)}%</div>
-                <p className="mt-3 text-sm leading-6 text-slate-500">系统根据 6 维向量与 29 种人格画像的距离，给出当前最接近的主人格。</p>
+                <p className="mt-3 text-sm leading-6 text-slate-500">统一按 6 维距离换算为接近度分数；分数越高，说明越接近该人格画像（非概率）。</p>
               </div>
               <div className="rounded-[28px] bg-slate-50 p-6">
                 <div className="text-sm font-semibold uppercase tracking-[0.2em] text-slate-400">一句话判词</div>
@@ -232,7 +179,7 @@ export const ResultPage = () => {
                     </div>
                     <div className="shrink-0 text-left sm:text-right">
                       <div className="font-display text-2xl font-bold text-slate-900">{match.percent.toFixed(2)}%</div>
-                      <div className="text-xs uppercase tracking-[0.2em] text-slate-400">相似度</div>
+                      <div className="text-xs uppercase tracking-[0.2em] text-slate-400">接近度</div>
                     </div>
                   </div>
                   <p className="mt-3 break-words text-sm leading-6 text-slate-500">{match.personality.tagline}</p>
@@ -297,7 +244,7 @@ export const ResultPage = () => {
                   <h3 className="mt-3 break-words font-display text-5xl font-bold text-slate-900">{primary.code}</h3>
                   <p className="mt-2 text-xl font-semibold text-slate-600">{primary.nameZh}</p>
                 </div>
-                <div className="shrink-0 rounded-full bg-slate-100 px-4 py-2 text-sm font-semibold text-slate-500">{result.confidence.toFixed(2)}% Match</div>
+                <div className="shrink-0 rounded-full bg-slate-100 px-4 py-2 text-sm font-semibold text-slate-500">{result.confidence.toFixed(2)}% Similarity</div>
               </div>
               <div className="mt-6 grid items-center gap-6 md:grid-cols-[0.85fr_1.15fr]">
                 <div className="rounded-[28px] bg-slate-50 p-4">
@@ -338,3 +285,4 @@ export const ResultPage = () => {
     </div>
   );
 };
+
