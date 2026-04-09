@@ -3,11 +3,12 @@
 type LikertScaleProps = {
   value?: number;
   onSelect: (value: number) => void;
+  disabled?: boolean;
 };
 
 const sizeMap = [56, 46, 38, 28, 38, 46, 56];
 
-export const LikertScale = ({ value, onSelect }: LikertScaleProps) => {
+export const LikertScale = ({ value, onSelect, disabled = false }: LikertScaleProps) => {
   return (
     <div className="space-y-5">
       <div className="flex items-center justify-between text-sm font-semibold text-slate-500">
@@ -30,8 +31,9 @@ export const LikertScale = ({ value, onSelect }: LikertScaleProps) => {
               key={option.value}
               type="button"
               aria-label={option.label}
+              disabled={disabled}
               onClick={() => onSelect(option.value)}
-              className="flex items-center justify-center rounded-full border-[3px] transition duration-200 hover:-translate-y-1 hover:scale-105"
+              className="flex items-center justify-center rounded-full border-[3px] transition duration-200 hover:-translate-y-1 hover:scale-105 disabled:cursor-default disabled:hover:translate-y-0 disabled:hover:scale-100"
               style={{
                 width: `${size}px`,
                 height: `${size}px`,
@@ -39,6 +41,7 @@ export const LikertScale = ({ value, onSelect }: LikertScaleProps) => {
                 backgroundColor,
                 color: textColor,
                 justifySelf: 'center',
+                opacity: disabled && !selected ? 0.55 : 1,
               }}
             >
               <span className="sr-only">{option.label}</span>

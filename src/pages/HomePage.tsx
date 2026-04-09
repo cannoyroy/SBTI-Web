@@ -53,8 +53,8 @@ export const HomePage = () => {
                 <div className="mt-2 text-sm leading-6 text-slate-500">题 7 级量表，兼顾反差体验与匹配稳定性。</div>
               </div>
               <div className="rounded-[28px] bg-slate-50 p-5">
-                <div className="font-display text-3xl font-bold text-slate-900">6D</div>
-                <div className="mt-2 text-sm leading-6 text-slate-500">精神状态维度，用 MBTI 式条形图呈现你的左右偏向。</div>
+                <div className="font-display text-3xl font-bold text-slate-900">Share</div>
+                <div className="mt-2 text-sm leading-6 text-slate-500">每个结果都带强烈人设和可视化角色，适合拿去发朋友圈、群聊和做今日精神状态宣告。</div>
               </div>
             </div>
           </div>
@@ -96,10 +96,10 @@ export const HomePage = () => {
           </p>
         </div>
         <div className="soft-card p-7">
-          <p className="pill">扩展结构</p>
-          <h2 className="mt-5 font-display text-3xl font-bold text-slate-900">人格新增不改代码</h2>
+          <p className="pill">社交货币</p>
+          <h2 className="mt-5 font-display text-3xl font-bold text-slate-900">结果天生适合转发</h2>
           <p className="mt-4 text-sm leading-7 text-slate-600">
-            角色 recipe、人格画像、题库与匹配逻辑分层，后续新增人格只需补配置和文案。
+            每个结果都带强烈人设和可视化角色，适合拿去发朋友圈、群聊和做今日精神状态宣告。
           </p>
         </div>
       </section>

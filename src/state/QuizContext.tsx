@@ -18,6 +18,7 @@ type QuizContextValue = {
   result: MatchResult | null;
   isComplete: boolean;
   setAnswer: (questionId: string, value: number) => void;
+  removeAnswer: (questionId: string) => void;
   resetQuiz: () => void;
 };
 
@@ -56,6 +57,14 @@ export const QuizProvider = ({ children }: PropsWithChildren) => {
     setAnswers((current) => ({ ...current, [questionId]: value }));
   }, []);
 
+  const removeAnswer = useCallback((questionId: string) => {
+    setAnswers((current) => {
+      const next = { ...current };
+      delete next[questionId];
+      return next;
+    });
+  }, []);
+
   const resetQuiz = useCallback(() => {
     setAnswers({});
     window.localStorage.removeItem(storageKey);
@@ -72,8 +81,8 @@ export const QuizProvider = ({ children }: PropsWithChildren) => {
   }, [answers, isComplete]);
 
   const value = useMemo(
-    () => ({ answers, answerCount, result, isComplete, setAnswer, resetQuiz }),
-    [answers, answerCount, result, isComplete, setAnswer, resetQuiz],
+    () => ({ answers, answerCount, result, isComplete, setAnswer, removeAnswer, resetQuiz }),
+    [answers, answerCount, result, isComplete, setAnswer, removeAnswer, resetQuiz],
   );
 
   return <QuizContext.Provider value={value}>{children}</QuizContext.Provider>;

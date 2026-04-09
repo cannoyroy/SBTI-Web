@@ -56,13 +56,13 @@ export const calculateMatch = (answers: Record<string, number>): MatchResult => 
   const [best, second, third] = ranked;
   const meanDistance = ranked.reduce((sum, item) => sum + item.distance, 0) / ranked.length;
   const separationBonus = second ? Math.min(20, Math.max(0, (second.distance - best.distance) / 2)) : 12;
-  const closeness = Math.max(52, Math.round(100 - (best.distance / Math.max(1, meanDistance)) * 38));
+  const closeness = Math.max(52, 100 - (best.distance / Math.max(1, meanDistance)) * 38);
   const confidence = Math.min(99, Math.max(55, closeness + separationBonus));
 
   return {
     primaryCode: best.code,
     top3Codes: [best.code, second?.code, third?.code].filter(Boolean) as string[],
-    confidence,
+    confidence: Number(confidence.toFixed(2)),
     traitScores,
   };
 };

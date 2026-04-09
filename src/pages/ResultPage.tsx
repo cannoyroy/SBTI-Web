@@ -122,7 +122,7 @@ export const ResultPage = () => {
             <div className="grid gap-4 sm:grid-cols-2">
               <div className="rounded-[28px] bg-slate-50 p-6">
                 <div className="text-sm font-semibold uppercase tracking-[0.2em] text-slate-400">匹配度</div>
-                <div className="mt-3 font-display text-4xl font-bold text-slate-900">{result.confidence}%</div>
+                <div className="mt-3 font-display text-4xl font-bold text-slate-900">{result.confidence.toFixed(2)}%</div>
                 <p className="mt-3 text-sm leading-6 text-slate-500">系统根据 6 维向量与 29 种人格画像的距离，给出当前最接近的主人格。</p>
               </div>
               <div className="rounded-[28px] bg-slate-50 p-6">
@@ -172,7 +172,7 @@ export const ResultPage = () => {
                       <div className="text-sm text-slate-500">{match.personality.nameZh}</div>
                     </div>
                     <div className="text-right">
-                      <div className="font-display text-2xl font-bold text-slate-900">{match.percent}%</div>
+                      <div className="font-display text-2xl font-bold text-slate-900">{match.percent.toFixed(2)}%</div>
                       <div className="text-xs uppercase tracking-[0.2em] text-slate-400">相似度</div>
                     </div>
                   </div>
@@ -238,7 +238,7 @@ export const ResultPage = () => {
                   <h3 className="mt-3 font-display text-5xl font-bold text-slate-900">{primary.code}</h3>
                   <p className="mt-2 text-xl font-semibold text-slate-600">{primary.nameZh}</p>
                 </div>
-                <div className="rounded-full bg-slate-100 px-4 py-2 text-sm font-semibold text-slate-500">{result.confidence}% Match</div>
+                <div className="rounded-full bg-slate-100 px-4 py-2 text-sm font-semibold text-slate-500">{result.confidence.toFixed(2)}% Match</div>
               </div>
               <div className="mt-6 grid items-center gap-6 md:grid-cols-[0.85fr_1.15fr]">
                 <div className="rounded-[28px] bg-slate-50 p-4">
@@ -279,3 +279,4 @@ export const ResultPage = () => {
     </div>
   );
 };
+
