@@ -84,4 +84,24 @@ Recommended Vercel settings:
 - `reference_materials/` is intentionally ignored by Git.
 - This project is for entertainment and product exploration, not psychological diagnosis.
 
+## Google Analytics (GA4)
+
+This project supports GA4 via a Vite environment variable.
+
+1. Add `VITE_GA_ID` to your environment (for example in Vercel Project Settings).
+2. Redeploy after updating environment variables.
+
+Example:
+
+```bash
+VITE_GA_ID=G-XXXXXXXXXX
+```
+
+Tracked by default:
+
+- page views on route changes
+- `quiz_start`
+- `result_complete`
+- `result_image_export_click`
+- `quiz_restart`
 

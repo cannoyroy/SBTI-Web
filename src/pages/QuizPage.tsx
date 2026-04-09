@@ -1,6 +1,7 @@
-﻿import { useEffect, useMemo, useState } from 'react';
+﻿import { useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { LikertScale } from '../components/LikertScale';
+import { trackEvent } from '../lib/ga';
 import { questions } from '../lib/questions';
 import { useQuiz } from '../state/QuizContext';
 
@@ -13,6 +14,18 @@ export const QuizPage = () => {
     const firstUnanswered = questions.findIndex((question) => answers[question.id] === undefined);
     return firstUnanswered === -1 ? 0 : firstUnanswered;
   });
+  const quizStartTrackedRef = useRef(false);
+
+  useEffect(() => {
+    if (quizStartTrackedRef.current || answerCount > 0) {
+      return;
+    }
+
+    quizStartTrackedRef.current = true;
+    trackEvent('quiz_start', {
+      question_total: questions.length,
+    });
+  }, [answerCount]);
 
   useEffect(() => {
     const firstUnanswered = questions.findIndex((question) => answers[question.id] === undefined);
@@ -134,4 +147,3 @@ export const QuizPage = () => {
     </div>
   );
 };
-

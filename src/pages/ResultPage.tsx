@@ -1,10 +1,11 @@
 ﻿import html2canvas from 'html2canvas';
-import { useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { Link, Navigate } from 'react-router-dom';
 import { CharacterArt } from '../components/CharacterArt';
 import { PersonalityCard } from '../components/PersonalityCard';
 import { TraitBar } from '../components/TraitBar';
 import { factionMeta, traitAxes } from '../lib/constants';
+import { trackEvent } from '../lib/ga';
 import { distanceToSimilarity, rankPersonalities, traitNarratives } from '../lib/matching';
 import { personalityMap } from '../lib/personalities';
 import { useQuiz } from '../state/QuizContext';
@@ -70,6 +71,13 @@ export const ResultPage = () => {
   const faction = factionMeta[primary.faction];
   const narratives = traitNarratives(result.traitScores);
   const onIosSafari = isIosSafari();
+
+  useEffect(() => {
+    trackEvent('result_complete', {
+      primary_code: result.primaryCode,
+      confidence: Number(result.confidence.toFixed(2)),
+    });
+  }, [result.confidence, result.primaryCode]);
 
   const waitForCaptureReady = async () => {
     const card = shareRef.current;
@@ -187,12 +195,23 @@ export const ResultPage = () => {
     return true;
   };
 
+  const handleRetake = () => {
+    trackEvent('quiz_restart', {
+      source: 'result_page',
+      primary_code: primary.code,
+    });
+    resetQuiz();
+  };
+
   const handleShare = async () => {
     if (!shareRef.current) {
       return;
     }
 
     try {
+      trackEvent('result_image_export_click', {
+        primary_code: primary.code,
+      });
       setShareState('working');
       await waitForCaptureReady();
 
@@ -270,7 +289,7 @@ export const ResultPage = () => {
               </button>
               <button
                 type="button"
-                onClick={resetQuiz}
+                onClick={handleRetake}
                 className="inline-flex items-center justify-center rounded-full border border-slate-300 bg-white px-7 py-4 font-display text-lg font-bold text-slate-700 transition hover:border-slate-400 hover:bg-slate-50"
               >
                 重新测试
@@ -455,5 +474,7 @@ export const ResultPage = () => {
     </div>
   );
 };
+
+
 
 
